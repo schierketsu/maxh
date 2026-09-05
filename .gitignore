@@ -1,0 +1,6 @@
+node_modules
+dist
+.env
+.env.local
+in_help/pass.md
+miniapp/dist
