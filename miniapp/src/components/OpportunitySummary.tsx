@@ -13,12 +13,10 @@ export function OpportunitySummary({ company, matches }: OpportunitySummaryProps
 
   return (
     <Panel mode="secondary" className="summary">
-      <div className="summary__stat--potential">
-        <div className="summary__business">
-          <h2>{company.name}</h2>
-        </div>
-        <FitText text={formatMoney(totalPotential)} min={24} max={54} />
+      <div className="summary__business">
+        <h2>{company.name}</h2>
       </div>
+      <FitText text={formatMoney(totalPotential)} min={24} max={88} className="summary__amount" />
     </Panel>
   )
 }
