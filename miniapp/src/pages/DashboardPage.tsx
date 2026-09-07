@@ -3,12 +3,17 @@ import { Navigate } from 'react-router-dom'
 import { OpportunitySummary } from '../components/OpportunitySummary'
 import { ProgramCard } from '../components/ProgramCard'
 import { useCompany } from '../context/CompanyContext'
+import { isCompanyLiked, setCompanyLiked } from '../lib/likedCompanies'
 import { getWebApp } from '../lib/maxBridge'
 
 export function DashboardPage() {
   const { company, matches, clearCompany } = useCompany()
   const [liked, setLiked] = useState(false)
   const [subscribed, setSubscribed] = useState(false)
+
+  useEffect(() => {
+    setLiked(company ? isCompanyLiked(company.inn) : false)
+  }, [company])
 
   useEffect(() => {
     const wa = getWebApp()
@@ -30,6 +35,12 @@ export function DashboardPage() {
     return <Navigate to="/" replace />
   }
 
+  const toggleLiked = () => {
+    const next = !liked
+    setLiked(next)
+    setCompanyLiked(company, next)
+  }
+
   return (
     <div className="page dashboard">
       <div className="dash-panel">
@@ -48,7 +59,7 @@ export function DashboardPage() {
               className={`dash-toolbar__btn dash-toolbar__btn--icon${liked ? ' is-active' : ''}`}
               aria-label="Лайк"
               aria-pressed={liked}
-              onClick={() => setLiked((v) => !v)}
+              onClick={toggleLiked}
             >
               <span aria-hidden="true">{liked ? '❤️' : '🤍'}</span>
             </button>

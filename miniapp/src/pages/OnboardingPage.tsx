@@ -1,22 +1,39 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Button, Input, Panel } from '@maxhub/max-ui'
+import { Button, Input } from '@maxhub/max-ui'
+import type { CompanyProfile } from '../types'
 import { fetchCompanyByInn } from '../lib/companyApi'
+import { getLikedCompanies, setCompanyLiked } from '../lib/likedCompanies'
 import { useCompany } from '../context/CompanyContext'
 
 export function OnboardingPage() {
   const { setCompany } = useCompany()
   const navigate = useNavigate()
   const [inn, setInn] = useState('')
-  const [error, setError] = useState('')
+  const [invalid, setInvalid] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [liked, setLiked] = useState<CompanyProfile[]>(() => getLikedCompanies())
+  const [subscribed, setSubscribed] = useState<Record<string, boolean>>({})
+
+  const openCompany = (company: CompanyProfile) => {
+    setCompany(company)
+    navigate('/dashboard')
+  }
+
+  const unlikeCompany = (company: CompanyProfile) => {
+    setLiked(setCompanyLiked(company, false))
+  }
+
+  const toggleSubscribed = (inn: string) => {
+    setSubscribed((prev) => ({ ...prev, [inn]: !prev[inn] }))
+  }
 
   const submitInn = async (event: FormEvent) => {
     event.preventDefault()
-    setError('')
+    setInvalid(false)
     const cleaned = inn.replace(/\D/g, '')
     if (cleaned.length !== 10 && cleaned.length !== 12) {
-      setError('ИНН должен содержать 10 или 12 цифр')
+      setInvalid(true)
       return
     }
 
@@ -24,13 +41,12 @@ export function OnboardingPage() {
     try {
       const found = await fetchCompanyByInn(cleaned)
       if (!found) {
-        setError('Компания не найдена. Проверьте введённый ИНН.')
+        setInvalid(true)
         return
       }
-      setCompany(found)
-      navigate('/dashboard')
+      openCompany(found)
     } catch {
-      setError('Не удалось получить данные. Попробуйте ещё раз чуть позже.')
+      setInvalid(true)
     } finally {
       setLoading(false)
     }
@@ -39,34 +55,78 @@ export function OnboardingPage() {
   return (
     <div className="page onboarding">
       <header className="brand-block">
-        <h1>Господдержка, которая подходит вашему бизнесу</h1>
+        <h1>
+          Поддержка, которая подходит
+          <span className="brand-block__accent">вашему бизнесу</span>
+        </h1>
       </header>
 
-      <Panel mode="secondary" className="inn-panel">
-        <form className="inn-form" onSubmit={submitInn}>
-          <div className="inn-row">
-            <Input
-              id="inn"
-              name="inn"
-              inputMode="numeric"
-              autoComplete="off"
-              placeholder="7707083893"
-              value={inn}
-              onChange={(e) => setInn(e.target.value)}
-              disabled={loading}
-            />
-            <Button type="submit" size="medium" loading={loading} disabled={loading}>
-              {loading ? 'Ищем…' : 'Найти'}
-            </Button>
+      <form className="inn-form" onSubmit={submitInn}>
+        <div className="inn-row">
+          <Input
+            id="inn"
+            name="inn"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="Введите ИНН"
+            value={inn}
+            onChange={(e) => {
+              setInn(e.target.value)
+              setInvalid(false)
+            }}
+            disabled={loading}
+            withClearButton={false}
+            innerClassNames={{ container: invalid ? 'inn-input--invalid' : undefined }}
+          />
+          <Button
+            type="submit"
+            size="medium"
+            loading={loading}
+            disabled={loading}
+            innerClassNames={{ content: 'inn-submit__label' }}
+          >
+            {loading ? 'Ищем…' : 'Найти'}
+          </Button>
+        </div>
+      </form>
+
+      {liked.length > 0 && (
+        <div className="liked-companies">
+          <div className="liked-companies__table">
+            {liked.map((company) => (
+              <div className="liked-companies__row" key={company.inn}>
+                <button
+                  type="button"
+                  className="liked-companies__name"
+                  onClick={() => openCompany(company)}
+                >
+                  {company.name}
+                </button>
+                <div className="liked-companies__actions">
+                  <button
+                    type="button"
+                    className="liked-companies__action is-active"
+                    aria-label="Убрать из избранного"
+                    aria-pressed="true"
+                    onClick={() => unlikeCompany(company)}
+                  >
+                    <span aria-hidden="true">❤️</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`liked-companies__action${subscribed[company.inn] ? ' is-active' : ''}`}
+                    aria-label="Уведомления"
+                    aria-pressed={Boolean(subscribed[company.inn])}
+                    onClick={() => toggleSubscribed(company.inn)}
+                  >
+                    <span aria-hidden="true">{subscribed[company.inn] ? '🔔' : '🔕'}</span>
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-          {error && <p className="form-error">{error}</p>}
-          <p className="form-note">
-            Начните с ИНН. Проверим профиль и покажем только релевантные меры.
-          </p>
-        </form>
-      </Panel>
-
-
+        </div>
+      )}
     </div>
   )
 }
