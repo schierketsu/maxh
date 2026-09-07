@@ -1,4 +1,5 @@
 import type { CompanyProfile, MatchedProgram } from '../types'
+import { Panel } from '@maxhub/max-ui'
 import { daysUntil, formatMoney } from '../lib/matching'
 
 interface OpportunitySummaryProps {
@@ -14,18 +15,22 @@ export function OpportunitySummary({ company, matches }: OpportunitySummaryProps
     .sort((a, b) => a - b)[0]
 
   return (
-    <section className="summary">
+    <Panel mode="secondary" className="summary">
       <div className="summary__business">
-        <p className="eyebrow">Ваш бизнес</p>
         <h2>{company.name}</h2>
         <p className="summary__tags">
           {company.region} · {company.industry} · {company.employees} сотрудников
         </p>
       </div>
 
+      <div className="summary__stat summary__stat--potential">
+        <span className="meta-label">Потенциал господдержки</span>
+        <strong>{formatMoney(totalPotential)}</strong>
+      </div>
+
       <div className="summary__grid">
         <div className="summary__stat">
-          <span className="meta-label">Возможности</span>
+          <span className="meta-label">Подходят сейчас</span>
           <strong>
             {matches.length}{' '}
             {matches.length === 1
@@ -36,13 +41,8 @@ export function OpportunitySummary({ company, matches }: OpportunitySummaryProps
           </strong>
           <span className="summary__hint">подходят сейчас</span>
         </div>
-        <div className="summary__stat summary__stat--accent">
-          <span className="meta-label">Потенциал</span>
-          <strong>{formatMoney(totalPotential)}</strong>
-          <span className="summary__hint">суммарно по топу</span>
-        </div>
         <div className="summary__stat">
-          <span className="meta-label">Требуют действий</span>
+          <span className="meta-label">Нужны шаги</span>
           <strong>{actionNeeded}</strong>
           <span className="summary__hint">программы с пробелами</span>
         </div>
@@ -52,6 +52,6 @@ export function OpportunitySummary({ company, matches }: OpportunitySummaryProps
           <span className="summary__hint">не пропустите срок</span>
         </div>
       </div>
-    </section>
+    </Panel>
   )
 }

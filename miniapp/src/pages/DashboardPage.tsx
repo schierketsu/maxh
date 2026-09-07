@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
+import { Button } from '@maxhub/max-ui'
 import { OpportunitySummary } from '../components/OpportunitySummary'
 import { ProgramCard } from '../components/ProgramCard'
 import { useCompany } from '../context/CompanyContext'
@@ -32,9 +33,9 @@ export function DashboardPage() {
     <div className="page dashboard">
       <header className="dash-header">
         <p className="brand">Мера</p>
-        <button type="button" className="linkish" onClick={clearCompany}>
+        <Button type="button" variant="ghost" size="small" onClick={clearCompany}>
           Сменить компанию
-        </button>
+        </Button>
       </header>
 
       <OpportunitySummary company={company} matches={matches} />
@@ -42,7 +43,6 @@ export function DashboardPage() {
       <section className="programs">
         <div className="section-head">
           <h2>Подходящие меры</h2>
-          <p>Топ программ с оценкой соответствия вашему профилю</p>
         </div>
 
         {matches.length === 0 ? (
