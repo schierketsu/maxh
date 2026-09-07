@@ -164,6 +164,15 @@ export function daysUntil(dateIso: string): number {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
 }
 
+export function daysWord(days: number): string {
+  const mod100 = days % 100
+  const mod10 = days % 10
+  if (mod100 >= 11 && mod100 <= 14) return 'дней'
+  if (mod10 === 1) return 'день'
+  if (mod10 >= 2 && mod10 <= 4) return 'дня'
+  return 'дней'
+}
+
 export function statusLabel(status: ProgramStatus): string {
   switch (status) {
     case 'eligible':

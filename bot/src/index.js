@@ -1,13 +1,42 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Agent, fetch as undiciFetch } from 'undici'
-import {
-  demoInns,
-  formatMoney,
-  lookupCompanyByInn,
-  matchPrograms,
-} from './matching.js'
+import { lookupCompanyByInn } from './dadata.js'
+import { formatMoney, matchPrograms } from './matching.js'
+import { startServer } from './server.js'
+
+function loadEnvFile() {
+  const envPath = resolve(dirname(fileURLToPath(import.meta.url)), '../.env')
+  if (!existsSync(envPath)) return
+  const raw = readFileSync(envPath, 'utf8')
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+    const eq = trimmed.indexOf('=')
+    if (eq === -1) continue
+    const key = trimmed.slice(0, eq).trim()
+    const value = trimmed.slice(eq + 1).trim()
+    if (!(key in process.env)) process.env[key] = value
+  }
+}
+
+loadEnvFile()
+
+const DEMO_INNS = ['7707083893', '500100732259', '1653001805']
+const demoLabelCache = new Map()
+
+async function demoLabel(inn) {
+  if (demoLabelCache.has(inn)) return demoLabelCache.get(inn)
+  try {
+    const company = await lookupCompanyByInn(inn)
+    const label = company?.name ?? inn
+    demoLabelCache.set(inn, label)
+    return label
+  } catch {
+    return inn
+  }
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '../..')
@@ -106,13 +135,13 @@ function mainMenu() {
   ])
 }
 
-function demoMenu() {
-  return keyboard(
-    demoInns.map((inn) => {
-      const company = lookupCompanyByInn(inn)
-      return [{ type: 'callback', text: company.name, payload: `inn:${inn}` }]
-    }),
+async function demoMenu() {
+  const rows = await Promise.all(
+    DEMO_INNS.map(async (inn) => [
+      { type: 'callback', text: await demoLabel(inn), payload: `inn:${inn}` },
+    ]),
   )
+  return keyboard(rows)
 }
 
 function startText(name) {
@@ -176,17 +205,29 @@ async function answerCallback(callbackId, text, attachments) {
 }
 
 async function handleInn(target, inn) {
-  const company = lookupCompanyByInn(inn)
+  let company
+  try {
+    company = await lookupCompanyByInn(inn)
+  } catch (error) {
+    console.error('DaData lookup failed:', error.message)
+    const text = 'Не удалось получить данные по ИНН. Попробуйте ещё раз чуть позже.'
+    if (target.callback) {
+      await answerCallback(target.callback.callback_id, text, mainMenu())
+    } else {
+      await sendTo(target, text, mainMenu())
+    }
+    return
+  }
+
   if (!company) {
     const text = [
-      `ИНН ${inn} нет в демо-базе.`,
-      'Пока доступны:',
-      ...demoInns.map((demoInn) => `• ${demoInn} — ${lookupCompanyByInn(demoInn).name}`),
+      `Компания с ИНН ${inn} не найдена.`,
+      'Проверьте номер или попробуйте демо-компанию:',
     ].join('\n')
     if (target.callback) {
-      await answerCallback(target.callback.callback_id, text, demoMenu())
+      await answerCallback(target.callback.callback_id, text, await demoMenu())
     } else {
-      await sendTo(target, text, demoMenu())
+      await sendTo(target, text, await demoMenu())
     }
     return
   }
@@ -228,7 +269,7 @@ async function handleCallback(update) {
       payload === 'menu:demo'
         ? 'Выберите демо-компанию или пришлите свой ИНН.'
         : 'Пришлите ИНН или выберите демо-компанию.',
-      demoMenu(),
+      await demoMenu(),
     )
     return
   }
@@ -270,7 +311,7 @@ async function handleMessage(update) {
     return
   }
   if (command === 'demo') {
-    await sendTo(update, 'Выберите демо-компанию:', demoMenu())
+    await sendTo(update, 'Выберите демо-компанию:', await demoMenu())
     return
   }
 
@@ -361,5 +402,6 @@ if ((subs.subscriptions ?? []).length > 0) {
   console.log(JSON.stringify(subs.subscriptions, null, 2))
 }
 await registerCommands()
+startServer()
 await poll()
 void me

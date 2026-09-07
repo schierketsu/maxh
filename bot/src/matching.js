@@ -1,44 +1,3 @@
-export const companiesByInn = {
-  7707083893: {
-    inn: '7707083893',
-    name: 'ООО «ТехноЛаб»',
-    region: 'Москва',
-    companyType: 'ООО',
-    industry: 'IT',
-    okved: ['62.01', '62.02'],
-    companyAgeMonths: 26,
-    employees: 12,
-    revenue: 18_000_000,
-    isSme: true,
-  },
-  500100732259: {
-    inn: '500100732259',
-    name: 'ИП Смирнова А.В.',
-    region: 'Московская область',
-    companyType: 'ИП',
-    industry: 'Производство',
-    okved: ['25.11', '25.62'],
-    companyAgeMonths: 48,
-    employees: 4,
-    revenue: 6_200_000,
-    isSme: true,
-  },
-  1653001805: {
-    inn: '1653001805',
-    name: 'ООО «Казань Фуд»',
-    region: 'Республика Татарстан',
-    companyType: 'ООО',
-    industry: 'Пищевая промышленность',
-    okved: ['10.71', '10.85'],
-    companyAgeMonths: 84,
-    employees: 35,
-    revenue: 42_000_000,
-    isSme: true,
-  },
-}
-
-export const demoInns = Object.keys(companiesByInn)
-
 const programs = [
   {
     id: 'equip-subsidy-msk',
@@ -132,11 +91,6 @@ function check(company, req) {
     default:
       return false
   }
-}
-
-export function lookupCompanyByInn(inn) {
-  const cleaned = String(inn).replace(/\D/g, '')
-  return companiesByInn[cleaned] ?? null
 }
 
 export function matchPrograms(company) {

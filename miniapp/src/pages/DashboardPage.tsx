@@ -1,6 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { Button } from '@maxhub/max-ui'
 import { OpportunitySummary } from '../components/OpportunitySummary'
 import { ProgramCard } from '../components/ProgramCard'
 import { useCompany } from '../context/CompanyContext'
@@ -8,6 +7,8 @@ import { getWebApp } from '../lib/maxBridge'
 
 export function DashboardPage() {
   const { company, matches, clearCompany } = useCompany()
+  const [liked, setLiked] = useState(false)
+  const [subscribed, setSubscribed] = useState(false)
 
   useEffect(() => {
     const wa = getWebApp()
@@ -31,14 +32,40 @@ export function DashboardPage() {
 
   return (
     <div className="page dashboard">
-      <header className="dash-header">
-        <p className="brand">Мера</p>
-        <Button type="button" variant="ghost" size="small" onClick={clearCompany}>
-          Сменить компанию
-        </Button>
-      </header>
+      <div className="dash-panel">
+        <div className="dash-toolbar">
+          <button
+            type="button"
+            className="dash-toolbar__btn dash-toolbar__btn--icon"
+            aria-label="Назад"
+            onClick={clearCompany}
+          >
+            <span aria-hidden="true">⬅️</span>
+          </button>
+          <div className="dash-toolbar__group">
+            <button
+              type="button"
+              className={`dash-toolbar__btn dash-toolbar__btn--icon${liked ? ' is-active' : ''}`}
+              aria-label="Лайк"
+              aria-pressed={liked}
+              onClick={() => setLiked((v) => !v)}
+            >
+              <span aria-hidden="true">{liked ? '❤️' : '🤍'}</span>
+            </button>
+            <button
+              type="button"
+              className={`dash-toolbar__btn dash-toolbar__btn--icon${subscribed ? ' is-active' : ''}`}
+              aria-label="Уведомления"
+              aria-pressed={subscribed}
+              onClick={() => setSubscribed((v) => !v)}
+            >
+              <span aria-hidden="true">{subscribed ? '🔔' : '🔕'}</span>
+            </button>
+          </div>
+        </div>
 
-      <OpportunitySummary company={company} matches={matches} />
+        <OpportunitySummary company={company} matches={matches} />
+      </div>
 
       <section className="programs">
         <div className="section-head">
@@ -58,10 +85,6 @@ export function DashboardPage() {
           </div>
         )}
       </section>
-
-      <p className="footnote">
-        Следующий шаг — детальная карточка программы и чек-лист документов.
-      </p>
     </div>
   )
 }

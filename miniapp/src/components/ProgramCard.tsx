@@ -1,6 +1,6 @@
 import type { MatchedProgram } from '../types'
 import { Panel } from '@maxhub/max-ui'
-import { daysUntil, formatMoney } from '../lib/matching'
+import { daysUntil, daysWord, formatMoney } from '../lib/matching'
 
 interface ProgramCardProps {
   match: MatchedProgram
@@ -12,23 +12,19 @@ export function ProgramCard({ match }: ProgramCardProps) {
 
   return (
     <Panel mode="secondary" className={`program-card status-${status}`}>
+      <div className="program-card__meta">
+        <span className="program-card__amount">до {formatMoney(amountPotential)}</span>
+        <span className="program-card__deadline">
+          {days === 0 ? 'истекает сегодня' : `осталось ${days} ${daysWord(days)}`}
+        </span>
+      </div>
+
       <h3 className="program-card__title">{program.title}</h3>
       <p className="program-card__desc">{program.shortDescription}</p>
 
-      <div className="program-card__meta">
-        <div>
-          <span className="meta-label">Потенциал</span>
-          <strong>{formatMoney(amountPotential)}</strong>
-        </div>
-        <div>
-          <span className="meta-label">Дедлайн</span>
-          <strong>{days === 0 ? 'Сегодня' : `${days} дн.`}</strong>
-        </div>
-      </div>
-
       {unmet.length > 0 && (
         <p className="program-card__gap">
-          Осталось закрыть {unmet.length}{' '}
+          Необходимо выполнить {unmet.length}{' '}
           {unmet.length === 1 ? 'условие' : unmet.length < 5 ? 'условия' : 'условий'}
         </p>
       )}

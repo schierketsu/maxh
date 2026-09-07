@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button, Input, Panel } from '@maxhub/max-ui'
-import { lookupCompanyByInn } from '../data/companies'
+import { fetchCompanyByInn } from '../lib/companyApi'
 import { useCompany } from '../context/CompanyContext'
 
 export function OnboardingPage() {
@@ -21,18 +21,19 @@ export function OnboardingPage() {
     }
 
     setLoading(true)
-    await new Promise((r) => setTimeout(r, 700))
-
-    const found = lookupCompanyByInn(cleaned)
-    setLoading(false)
-
-    if (!found) {
-      setError('Компания не найдена. Проверьте введённый ИНН.')
-      return
+    try {
+      const found = await fetchCompanyByInn(cleaned)
+      if (!found) {
+        setError('Компания не найдена. Проверьте введённый ИНН.')
+        return
+      }
+      setCompany(found)
+      navigate('/dashboard')
+    } catch {
+      setError('Не удалось получить данные. Попробуйте ещё раз чуть позже.')
+    } finally {
+      setLoading(false)
     }
-
-    setCompany(found)
-    navigate('/dashboard')
   }
 
   return (
