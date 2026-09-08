@@ -32,7 +32,7 @@ export function DashboardPage() {
   }, [clearCompany])
 
   if (!company) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/gov" replace />
   }
 
   const toggleLiked = () => {
@@ -44,37 +44,6 @@ export function DashboardPage() {
   return (
     <div className="page dashboard">
       <div className="dash-panel">
-        <div className="dash-toolbar">
-          <button
-            type="button"
-            className="dash-toolbar__btn dash-toolbar__btn--icon"
-            aria-label="Назад"
-            onClick={clearCompany}
-          >
-            <span aria-hidden="true">⬅️</span>
-          </button>
-          <div className="dash-toolbar__group">
-            <button
-              type="button"
-              className={`dash-toolbar__btn dash-toolbar__btn--icon${liked ? ' is-active' : ''}`}
-              aria-label="Лайк"
-              aria-pressed={liked}
-              onClick={toggleLiked}
-            >
-              <span aria-hidden="true">{liked ? '❤️' : '🤍'}</span>
-            </button>
-            <button
-              type="button"
-              className={`dash-toolbar__btn dash-toolbar__btn--icon${subscribed ? ' is-active' : ''}`}
-              aria-label="Уведомления"
-              aria-pressed={subscribed}
-              onClick={() => setSubscribed((v) => !v)}
-            >
-              <span aria-hidden="true">{subscribed ? '🔔' : '🔕'}</span>
-            </button>
-          </div>
-        </div>
-
         <OpportunitySummary company={company} matches={matches} />
       </div>
 
@@ -96,6 +65,35 @@ export function DashboardPage() {
           </div>
         )}
       </section>
+
+      <div className="dash-toolbar">
+        <button
+          type="button"
+          className="dash-toolbar__btn dash-toolbar__btn--icon"
+          aria-label="Назад"
+          onClick={clearCompany}
+        >
+          <span aria-hidden="true">⬅️</span>
+        </button>
+        <button
+          type="button"
+          className={`dash-toolbar__btn dash-toolbar__btn--icon${liked ? ' is-active' : ''}`}
+          aria-label="Лайк"
+          aria-pressed={liked}
+          onClick={toggleLiked}
+        >
+          <span aria-hidden="true">{liked ? '❤️' : '🤍'}</span>
+        </button>
+        <button
+          type="button"
+          className={`dash-toolbar__btn dash-toolbar__btn--icon${subscribed ? ' is-active' : ''}`}
+          aria-label="Уведомления"
+          aria-pressed={subscribed}
+          onClick={() => setSubscribed((v) => !v)}
+        >
+          <span aria-hidden="true">{subscribed ? '🔔' : '🔕'}</span>
+        </button>
+      </div>
     </div>
   )
 }

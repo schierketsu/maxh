@@ -14,6 +14,27 @@
 export DADATA_API_KEY=ваш_ключ   # PowerShell: $env:DADATA_API_KEY = "..."
 ```
 
+Для разбора B2B-заявок свободным текстом нужен ключ Anthropic API
+(console.anthropic.com):
+
+```bash
+export ANTHROPIC_API_KEY=ваш_ключ
+```
+
+Без него сама компания и господдержка продолжат работать — упадёт только
+создание новой B2B-заявки (`POST /api/b2b/requests`).
+
+Опционально — публичный URL мини-аппа, чтобы уведомления в MAX несли
+кликабельную кнопку «Предложить цену» (без неё уведомление всё равно
+уйдёт, просто без кнопки):
+
+```bash
+export MINIAPP_URL=https://maxhackathon.ru
+```
+
+Все переменные можно также положить в `bot/.env` (`KEY=value` построчно,
+файл в `.gitignore`).
+
 ```bash
 cd bot
 npm start
@@ -34,5 +55,21 @@ npm start
 
 - `GET /api/company/:inn` → `{ company }` или `404 { error }`, если компания
   не найдена. Ответы кэшируются на 10 минут.
+- `POST /api/b2b/requests` `{ inn, text }` → LLM разбирает текст в заявку,
+  подходящим по ОКВЭД компаниям (с известным MAX user_id) уходит
+  уведомление → `{ request, notified }`.
+- `GET /api/b2b/opportunities?inn=X` → чужие открытые заявки, включая
+  сид-демо → `{ opportunities }`.
+- `GET /api/b2b/my-requests?inn=X` → свои заявки с полученными
+  предложениями → `{ requests }`.
+- `POST /api/b2b/requests/:id/offers` `{ inn, price, terms }` → сохраняет
+  предложение, уведомляет заявителя → `{ offer }`.
+- `GET /api/b2b/requests/:id` → одна заявка → `{ request }`.
+
+Данные B2B (заявки/предложения/связка компания↔MAX user_id) хранятся в
+`bot/data/b2b.json` — создаётся и сеется демо-заявками при первом запуске,
+в git не попадает. Уведомление в MAX доходит только до компаний, которые
+хотя бы раз писали боту (иначе у нас просто нет их user_id) — это
+ограничение платформы, а не баг.
 
 На этой Windows `platform-api2.max.ru` падает на сертификате Минцифры, поэтому клиент сначала пробует api2 (без проверки TLS), иначе переключается на `platform-api.max.ru`.

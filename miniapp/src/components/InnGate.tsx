@@ -6,7 +6,12 @@ import { fetchCompanyByInn } from '../lib/companyApi'
 import { getLikedCompanies, setCompanyLiked } from '../lib/likedCompanies'
 import { useCompany } from '../context/CompanyContext'
 
-export function OnboardingPage() {
+interface InnGateProps {
+  nextPath: string
+}
+
+/** ИНН-форма + список избранных компаний. Общая для гос- и B2B-режимов. */
+export function InnGate({ nextPath }: InnGateProps) {
   const { setCompany } = useCompany()
   const navigate = useNavigate()
   const [inn, setInn] = useState('')
@@ -17,7 +22,7 @@ export function OnboardingPage() {
 
   const openCompany = (company: CompanyProfile) => {
     setCompany(company)
-    navigate('/dashboard')
+    navigate(nextPath)
   }
 
   const unlikeCompany = (company: CompanyProfile) => {
@@ -53,14 +58,7 @@ export function OnboardingPage() {
   }
 
   return (
-    <div className="page onboarding">
-      <header className="brand-block">
-        <h1>
-          Поддержка, которая подходит
-          <span className="brand-block__accent">вашему бизнесу</span>
-        </h1>
-      </header>
-
+    <>
       <form className="inn-form" onSubmit={submitInn}>
         <div className="inn-row">
           <Input
@@ -127,6 +125,6 @@ export function OnboardingPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }

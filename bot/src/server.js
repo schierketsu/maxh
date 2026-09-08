@@ -1,10 +1,22 @@
 import { createServer } from 'node:http'
+import {
+  addOffer,
+  createRequest,
+  findMatchingCompanies,
+  getCompany,
+  getRequest,
+  listMyRequests,
+  listOpportunities,
+  upsertCompany,
+} from './b2bStore.js'
 import { lookupCompanyByInn } from './dadata.js'
+import { extractRequest } from './llm.js'
+import { keyboard, sendMessage } from './max.js'
 
 const CACHE_TTL_MS = 10 * 60 * 1000
 const cache = new Map()
 
-async function getCompany(inn) {
+async function getDadataCompany(inn) {
   const cached = cache.get(inn)
   if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.company
   const company = await lookupCompanyByInn(inn)
@@ -14,7 +26,7 @@ async function getCompany(inn) {
 
 function withCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
 }
 
@@ -22,6 +34,64 @@ function sendJson(res, status, body) {
   withCors(res)
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' })
   res.end(JSON.stringify(body))
+}
+
+function readJsonBody(req) {
+  return new Promise((resolvePromise, reject) => {
+    let raw = ''
+    req.on('data', (chunk) => {
+      raw += chunk
+      if (raw.length > 1_000_000) {
+        reject(new Error('Body too large'))
+        req.destroy()
+      }
+    })
+    req.on('end', () => {
+      if (!raw) {
+        resolvePromise({})
+        return
+      }
+      try {
+        resolvePromise(JSON.parse(raw))
+      } catch {
+        reject(new Error('Invalid JSON body'))
+      }
+    })
+    req.on('error', reject)
+  })
+}
+
+function offerButton(requestId) {
+  const base = process.env.MINIAPP_URL
+  if (!base) return undefined
+  return keyboard([[{ type: 'link', text: 'Предложить цену', url: `${base.replace(/\/$/, '')}/b2b/offer/${requestId}` }]])
+}
+
+async function notifyMatches(request, requesterCompany) {
+  const matches = findMatchingCompanies(requesterCompany.okved, request.requesterInn)
+  for (const company of matches) {
+    try {
+      await sendMessage(
+        company.userId,
+        [
+          `🤝 Новая возможность для вашей компании`,
+          '',
+          `**${request.title}**`,
+          request.item,
+          request.budget ? `Бюджет: до ${request.budget.toLocaleString('ru-RU')} ₽` : null,
+          request.deadline ? `Срок: до ${request.deadline}` : null,
+          '',
+          `Подходит по вашему профилю (${requesterCompany.name}).`,
+        ]
+          .filter(Boolean)
+          .join('\n'),
+        offerButton(request.id),
+      )
+    } catch (error) {
+      console.error(`Notify ${company.inn} failed:`, error.message)
+    }
+  }
+  return matches.length
 }
 
 export function startServer(port = process.env.PORT ?? 3001) {
@@ -34,21 +104,158 @@ export function startServer(port = process.env.PORT ?? 3001) {
     }
 
     const url = new URL(req.url, 'http://localhost')
-    const match = url.pathname.match(/^\/api\/company\/(\d{10,12})$/)
+    const { pathname } = url
 
-    if (req.method === 'GET' && match) {
-      const inn = match[1]
+    const companyMatch = pathname.match(/^\/api\/company\/(\d{10,12})$/)
+    if (req.method === 'GET' && companyMatch) {
+      const inn = companyMatch[1]
       try {
-        const company = await getCompany(inn)
+        const company = await getDadataCompany(inn)
         if (!company) {
           sendJson(res, 404, { error: 'Компания не найдена' })
           return
         }
+        upsertCompany(inn, {
+          name: company.name,
+          region: company.region,
+          industry: company.industry,
+          okved: company.okved,
+        })
         sendJson(res, 200, { company })
       } catch (error) {
         console.error('Company lookup failed:', error.message)
         sendJson(res, 502, { error: 'Не удалось получить данные компании' })
       }
+      return
+    }
+
+    if (req.method === 'POST' && pathname === '/api/b2b/requests') {
+      try {
+        const { inn, text } = await readJsonBody(req)
+        const cleanedInn = String(inn ?? '').replace(/\D/g, '')
+        if (!cleanedInn || !text?.trim()) {
+          sendJson(res, 400, { error: 'Нужны inn и text' })
+          return
+        }
+
+        const dadataCompany = await getDadataCompany(cleanedInn)
+        if (!dadataCompany) {
+          sendJson(res, 404, { error: 'Компания не найдена' })
+          return
+        }
+        const requesterCompany = upsertCompany(cleanedInn, {
+          name: dadataCompany.name,
+          region: dadataCompany.region,
+          industry: dadataCompany.industry,
+          okved: dadataCompany.okved,
+        })
+
+        const parsed = await extractRequest(text.trim())
+        const request = createRequest({
+          requesterInn: cleanedInn,
+          requesterName: requesterCompany.name,
+          rawText: text.trim(),
+          ...parsed,
+        })
+
+        const notified = await notifyMatches(request, requesterCompany)
+        sendJson(res, 201, { request, notified })
+      } catch (error) {
+        console.error('Create request failed:', error.message)
+        sendJson(res, 502, { error: 'Не удалось создать заявку' })
+      }
+      return
+    }
+
+    const offerMatch = pathname.match(/^\/api\/b2b\/requests\/([^/]+)\/offers$/)
+    if (req.method === 'POST' && offerMatch) {
+      const requestId = offerMatch[1]
+      try {
+        const { inn, price, terms } = await readJsonBody(req)
+        const cleanedInn = String(inn ?? '').replace(/\D/g, '')
+        const request = getRequest(requestId)
+        if (!request) {
+          sendJson(res, 404, { error: 'Заявка не найдена' })
+          return
+        }
+        if (!cleanedInn) {
+          sendJson(res, 400, { error: 'Нужен inn' })
+          return
+        }
+
+        const dadataCompany = await getDadataCompany(cleanedInn)
+        if (!dadataCompany) {
+          sendJson(res, 404, { error: 'Компания не найдена' })
+          return
+        }
+        upsertCompany(cleanedInn, {
+          name: dadataCompany.name,
+          region: dadataCompany.region,
+          industry: dadataCompany.industry,
+          okved: dadataCompany.okved,
+        })
+
+        const result = addOffer({
+          requestId,
+          supplierInn: cleanedInn,
+          supplierName: dadataCompany.name,
+          price: price ?? null,
+          terms: terms ?? null,
+        })
+
+        const requesterCompany = request.requesterInn ? getCompany(request.requesterInn) : null
+        if (requesterCompany?.userId) {
+          try {
+            await sendMessage(
+              requesterCompany.userId,
+              [
+                `📩 Новое предложение по заявке «${request.title}»`,
+                '',
+                `${dadataCompany.name}${result.offer.price ? ` — ${result.offer.price.toLocaleString('ru-RU')} ₽` : ''}`,
+                result.offer.terms ?? null,
+              ]
+                .filter(Boolean)
+                .join('\n'),
+            )
+          } catch (error) {
+            console.error('Notify requester failed:', error.message)
+          }
+        }
+
+        sendJson(res, 201, { offer: result.offer })
+      } catch (error) {
+        console.error('Create offer failed:', error.message)
+        sendJson(res, 502, { error: 'Не удалось отправить предложение' })
+      }
+      return
+    }
+
+    const requestMatch = pathname.match(/^\/api\/b2b\/requests\/([^/]+)$/)
+    if (req.method === 'GET' && requestMatch) {
+      const request = getRequest(requestMatch[1])
+      if (!request) {
+        sendJson(res, 404, { error: 'Заявка не найдена' })
+        return
+      }
+      sendJson(res, 200, { request })
+      return
+    }
+
+    if (req.method === 'GET' && pathname === '/api/b2b/opportunities') {
+      const inn = String(url.searchParams.get('inn') ?? '').replace(/\D/g, '')
+      const requesterCompany = inn ? getCompany(inn) : null
+      const opportunities = listOpportunities(inn, requesterCompany?.okved)
+      sendJson(res, 200, { opportunities })
+      return
+    }
+
+    if (req.method === 'GET' && pathname === '/api/b2b/my-requests') {
+      const inn = String(url.searchParams.get('inn') ?? '').replace(/\D/g, '')
+      if (!inn) {
+        sendJson(res, 400, { error: 'Нужен inn' })
+        return
+      }
+      sendJson(res, 200, { requests: listMyRequests(inn) })
       return
     }
 

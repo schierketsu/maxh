@@ -12,7 +12,8 @@ import { matchPrograms } from '../lib/matching'
 interface CompanyContextValue {
   company: CompanyProfile | null
   matches: MatchedProgram[]
-  setCompany: (company: CompanyProfile | null) => void
+  /** persist=false keeps the company in memory only — gone on next page load (used by the Госуслуги stub). */
+  setCompany: (company: CompanyProfile | null, persist?: boolean) => void
   clearCompany: () => void
 }
 
@@ -33,8 +34,9 @@ function loadStored(): CompanyProfile | null {
 export function CompanyProvider({ children }: { children: ReactNode }) {
   const [company, setCompanyState] = useState<CompanyProfile | null>(() => loadStored())
 
-  const setCompany = useCallback((next: CompanyProfile | null) => {
+  const setCompany = useCallback((next: CompanyProfile | null, persist = true) => {
     setCompanyState(next)
+    if (!persist) return
     if (next) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
     } else {

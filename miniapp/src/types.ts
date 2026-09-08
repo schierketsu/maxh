@@ -53,3 +53,33 @@ export interface MatchedProgram {
   unmet: MatchedCriterion[]
   nextActions: string[]
 }
+
+export interface B2BRequest {
+  id: string
+  requesterInn: string | null
+  requesterName: string
+  isDemo: boolean
+  title: string
+  item: string
+  qty: number | null
+  region: string | null
+  deadline: string | null
+  budget: number | null
+  notes: string | null
+  rawText: string | null
+  createdAt: string
+}
+
+export interface B2BOffer {
+  id: string
+  requestId: string
+  supplierInn: string
+  supplierName: string
+  price: number | null
+  terms: string | null
+  createdAt: string
+}
+
+export interface B2BRequestWithOffers extends B2BRequest {
+  offers: B2BOffer[]
+}
