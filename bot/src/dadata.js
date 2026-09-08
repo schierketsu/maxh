@@ -61,7 +61,7 @@ function normalize(suggestion) {
   }
 }
 
-export async function lookupCompanyByInn(inn) {
+async function fetchSuggestion(inn) {
   const cleaned = String(inn).replace(/\D/g, '')
   const res = await undiciFetch(DADATA_URL, {
     method: 'POST',
@@ -80,7 +80,57 @@ export async function lookupCompanyByInn(inn) {
   }
 
   const json = await res.json()
-  const suggestion = json.suggestions?.[0]
+  return json.suggestions?.[0] ?? null
+}
+
+export async function lookupCompanyByInn(inn) {
+  const suggestion = await fetchSuggestion(inn)
   if (!suggestion) return null
   return normalize(suggestion)
+}
+
+function formatDate(raw) {
+  if (!raw) return null
+  const date = /^\d+$/.test(String(raw)) ? new Date(Number(raw)) : new Date(raw)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toLocaleDateString('ru-RU')
+}
+
+const STATUS_LABELS = {
+  ACTIVE: 'Действующая',
+  LIQUIDATING: 'В процессе ликвидации',
+  LIQUIDATED: 'Ликвидирована',
+  REORGANIZING: 'В процессе реорганизации',
+  BANKRUPT: 'Банкротство',
+}
+
+/** Максимум подробностей о компании из DaData — для карточки "вся информация" в мини-аппе. */
+export async function lookupCompanyDetailsByInn(inn) {
+  const suggestion = await fetchSuggestion(inn)
+  if (!suggestion) return null
+  const data = suggestion.data
+
+  return {
+    inn: data.inn,
+    kpp: data.kpp ?? null,
+    ogrn: data.ogrn ?? data.ogrnip ?? null,
+    fullName: data.name?.full_with_opf ?? suggestion.value,
+    shortName: data.name?.short_with_opf ?? suggestion.value,
+    opf: data.opf?.full ?? null,
+    status: (data.state?.status && STATUS_LABELS[data.state.status]) ?? data.state?.status ?? null,
+    registrationDate: formatDate(data.state?.registration_date),
+    address: data.address?.unrestricted_value ?? data.address?.value ?? null,
+    okved: data.okved ?? null,
+    okvedName: data.okveds?.[0]?.name ?? null,
+    managerName: data.management?.name ?? null,
+    managerPost: data.management?.post ?? null,
+    employeeCount: data.employee_count ?? null,
+    capital: data.capital?.value ?? null,
+    taxSystem: (data.finance?.tax_system && TAX_REGIME_LABELS[data.finance.tax_system]) ?? data.finance?.tax_system ?? null,
+    income: data.finance?.income ?? null,
+    revenue: data.finance?.revenue ?? null,
+    phones: data.phones?.map((p) => p.value ?? p.source) ?? null,
+    emails: data.emails?.map((e) => e.value ?? e.source) ?? null,
+    sites: data.sites?.map((s) => s.value ?? s.source) ?? null,
+  }
 }

@@ -83,3 +83,27 @@ export interface B2BOffer {
 export interface B2BRequestWithOffers extends B2BRequest {
   offers: B2BOffer[]
 }
+
+export interface CompanyDetails {
+  inn: string
+  kpp: string | null
+  ogrn: string | null
+  fullName: string
+  shortName: string
+  opf: string | null
+  status: string | null
+  registrationDate: string | null
+  address: string | null
+  okved: string | null
+  okvedName: string | null
+  managerName: string | null
+  managerPost: string | null
+  employeeCount: number | null
+  capital: number | null
+  taxSystem: string | null
+  income: number | null
+  revenue: number | null
+  phones: string[] | null
+  emails: string[] | null
+  sites: string[] | null
+}

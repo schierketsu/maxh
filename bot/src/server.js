@@ -9,12 +9,13 @@ import {
   listOpportunities,
   upsertCompany,
 } from './b2bStore.js'
-import { lookupCompanyByInn } from './dadata.js'
+import { lookupCompanyByInn, lookupCompanyDetailsByInn } from './dadata.js'
 import { extractRequest } from './llm.js'
 import { keyboard, sendMessage } from './max.js'
 
 const CACHE_TTL_MS = 10 * 60 * 1000
 const cache = new Map()
+const detailsCache = new Map()
 
 async function getDadataCompany(inn) {
   const cached = cache.get(inn)
@@ -22,6 +23,14 @@ async function getDadataCompany(inn) {
   const company = await lookupCompanyByInn(inn)
   cache.set(inn, { company, at: Date.now() })
   return company
+}
+
+async function getDadataCompanyDetails(inn) {
+  const cached = detailsCache.get(inn)
+  if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.details
+  const details = await lookupCompanyDetailsByInn(inn)
+  detailsCache.set(inn, { details, at: Date.now() })
+  return details
 }
 
 function withCors(res) {
@@ -124,6 +133,23 @@ export function startServer(port = process.env.PORT ?? 3001) {
         sendJson(res, 200, { company })
       } catch (error) {
         console.error('Company lookup failed:', error.message)
+        sendJson(res, 502, { error: 'Не удалось получить данные компании' })
+      }
+      return
+    }
+
+    const detailsMatch = pathname.match(/^\/api\/company\/(\d{10,12})\/details$/)
+    if (req.method === 'GET' && detailsMatch) {
+      const inn = detailsMatch[1]
+      try {
+        const details = await getDadataCompanyDetails(inn)
+        if (!details) {
+          sendJson(res, 404, { error: 'Компания не найдена' })
+          return
+        }
+        sendJson(res, 200, { details })
+      } catch (error) {
+        console.error('Company details lookup failed:', error.message)
         sendJson(res, 502, { error: 'Не удалось получить данные компании' })
       }
       return

@@ -8,7 +8,7 @@ import { useCompany } from '../context/CompanyContext'
 // Заглушка: реальной интеграции с Госуслугами нет, поэтому ИНН зашит в код.
 // Сессия не сохраняется (persist=false у setCompany) — после перезапуска
 // приложения нужно будет "связать" аккаунт заново.
-const GOSUSLUGI_STUB_INN = '7707083893'
+const GOSUSLUGI_STUB_INN = '7724351831'
 
 export function ModeSelectPage() {
   const { setCompany } = useCompany()
