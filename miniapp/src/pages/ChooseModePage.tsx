@@ -22,7 +22,7 @@ export function ChooseModePage() {
       </header>
 
       {showDetails && (
-        <CompanyDetailsOverlay inn={company?.inn ?? null} onClose={() => setShowDetails(false)} />
+        <CompanyDetailsOverlay company={company} onClose={() => setShowDetails(false)} />
       )}
 
       <div className="notice-tile">нет уведомлений</div>
