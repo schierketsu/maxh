@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useCompany } from '../context/CompanyContext'
 import { fetchCompanyDetails } from '../lib/companyApi'
-import { loadYandexMaps, type YMapsMap } from '../lib/yandexMaps'
+import { loadYandexMaps, type YMapInstance } from '../lib/yandexMaps'
+import mapCustomization from '../assets/customization.json'
 
 type Status = 'loading' | 'ready' | 'no-company' | 'no-location' | 'error'
 
@@ -25,44 +26,41 @@ export function MapPage() {
     }
 
     let cancelled = false
-    let map: YMapsMap | null = null
+    let map: YMapInstance | null = null
 
     async function init() {
       if (!company) return
       setStatus('loading')
       try {
-        const [details] = await Promise.all([fetchCompanyDetails(company.inn), loadYandexMaps()])
+        const [details, ymaps3] = await Promise.all([
+          fetchCompanyDetails(company.inn),
+          loadYandexMaps(),
+        ])
         if (cancelled) return
 
-        if (!details?.lat || !details?.lon || !mapRef.current || !window.ymaps) {
+        if (!details?.lat || !details?.lon || !mapRef.current) {
           setStatus('no-location')
           return
         }
 
-        const coords: [number, number] = [details.lat, details.lon]
-        map = new window.ymaps.Map(
-          mapRef.current,
-          {
-            center: coords,
-            zoom: 16,
-            controls: [],
-          },
-          {
-            suppressMapOpenBlock: true,
-            copyrightLogoVisible: false,
-            copyrightProvidersVisible: false,
-            copyrightUaVisible: false,
-            yandexMapDisablePoiInteractivity: true,
-          },
-        )
-        map.options.set('openBalloonOnClick', false)
+        // v3 использует порядок [долгота, широта], в отличие от [широта, долгота] у DaData.
+        const coords: [number, number] = [details.lon, details.lat]
 
-        const placemark = new window.ymaps.Placemark(
-          coords,
-          { hintContent: details.shortName },
-          { preset: 'islands#redDotIcon', openBalloonOnClick: false },
-        )
-        map.geoObjects.add(placemark)
+        map = new ymaps3.YMap(mapRef.current, {
+          location: { center: coords, zoom: 16 },
+          mode: 'vector',
+        })
+        map.addChild(new ymaps3.YMapDefaultSchemeLayer({ customization: mapCustomization }))
+        // YMapDefaultFeaturesLayer обязателен — это слой, к которому вообще
+        // крепятся любые метки (включая нашу собственную), а не только
+        // сторонние организации.
+        map.addChild(new ymaps3.YMapDefaultFeaturesLayer({}))
+
+        const markerEl = document.createElement('div')
+        markerEl.className = 'map-marker'
+        markerEl.title = details.shortName
+        map.addChild(new ymaps3.YMapMarker({ coordinates: coords }, markerEl))
+
         setStatus('ready')
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -81,7 +79,6 @@ export function MapPage() {
 
   return (
     <div className="page map-page">
-      {status === 'loading' && <p className="empty">Загружаем карту…</p>}
       {status === 'no-company' && (
         <p className="empty">Компания не определена — авторизуйтесь через Госуслуги.</p>
       )}

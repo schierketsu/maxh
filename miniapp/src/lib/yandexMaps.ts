@@ -1,51 +1,53 @@
 const SCRIPT_ID = 'yandex-maps-script'
 const API_KEY = 'PASTE_YANDEX_MAPS_API_KEY'
 
-declare global {
-  interface Window {
-    ymaps?: {
-      ready: (callback: () => void) => void
-      Map: new (
-        element: HTMLElement,
-        state: Record<string, unknown>,
-        options?: Record<string, unknown>,
-      ) => YMapsMap
-      Placemark: new (
-        coords: [number, number],
-        properties?: Record<string, unknown>,
-        options?: Record<string, unknown>,
-      ) => unknown
-    }
-  }
-}
-
-interface YMapsMap {
-  geoObjects: { add: (object: unknown) => void }
-  options: { set: (key: string, value: unknown) => void }
+interface YMapInstance {
+  addChild: (child: unknown) => void
   destroy: () => void
 }
 
-let loadPromise: Promise<void> | null = null
+interface Ymaps3Namespace {
+  ready: Promise<void>
+  YMap: new (element: HTMLElement, props: Record<string, unknown>) => YMapInstance
+  YMapDefaultSchemeLayer: new (props?: Record<string, unknown>) => unknown
+  YMapDefaultFeaturesLayer: new (props?: Record<string, unknown>) => unknown
+  YMapMarker: new (props: Record<string, unknown>, element: HTMLElement) => unknown
+}
 
-/** Подгружает Yandex Maps JS API (v2.1) один раз и резолвится после ymaps.ready(). */
-export function loadYandexMaps(): Promise<void> {
-  if (window.ymaps) return Promise.resolve()
+declare global {
+  interface Window {
+    ymaps3?: Ymaps3Namespace
+  }
+}
+
+let loadPromise: Promise<Ymaps3Namespace> | null = null
+
+/**
+ * Подгружает Yandex Maps JS API v3 один раз и резолвится после ymaps3.ready.
+ * Ключ ограничен по HTTP referer в кабинете Яндекса — работает с localhost
+ * и настоящим доменом продакшена, но НЕ отвечает на запросы без Referer
+ * (например, curl без заголовка) — это ожидаемо, не баг.
+ */
+export function loadYandexMaps(): Promise<Ymaps3Namespace> {
+  if (window.ymaps3) return window.ymaps3.ready.then(() => window.ymaps3 as Ymaps3Namespace)
   if (loadPromise) return loadPromise
 
   loadPromise = new Promise((resolve, reject) => {
-    const onReady = () => window.ymaps?.ready(resolve)
+    const onLoad = () => {
+      window.ymaps3?.ready.then(() => resolve(window.ymaps3 as Ymaps3Namespace)).catch(reject)
+    }
     const existing = document.getElementById(SCRIPT_ID)
     if (existing) {
-      existing.addEventListener('load', onReady)
+      existing.addEventListener('load', onLoad)
       existing.addEventListener('error', () => reject(new Error('Не удалось загрузить карту')))
       return
     }
 
     const script = document.createElement('script')
     script.id = SCRIPT_ID
-    script.src = `https://api-maps.yandex.ru/2.1/?apikey=${API_KEY}&lang=ru_RU`
+    script.src = `https://api-maps.yandex.ru/v3/?apikey=${API_KEY}&lang=ru_RU`
     script.async = true
-    script.onload = onReady
+    script.onload = onLoad
     script.onerror = () => reject(new Error('Не удалось загрузить карту'))
     document.head.appendChild(script)
   })
@@ -53,4 +55,4 @@ export function loadYandexMaps(): Promise<void> {
   return loadPromise
 }
 
-export type { YMapsMap }
+export type { YMapInstance }

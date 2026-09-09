@@ -215,14 +215,18 @@ button, input, select, textarea { font: inherit; }
 }
 
 .map-page {
-  min-height: 100dvh;
-  margin-top: -18px;
+  /* position: fixed + inset: 0 даёт браузеру однозначную (не через
+     min-height/flex-grow цепочку предков) высоту контейнера — это нужно,
+     т.к. внутренний движок Yandex Maps v3 меряет контейнер через
+     ResizeObserver и с процентными/flex-высотами по цепочке предков
+     получает 0 и не рисует canvas вообще. */
+  position: fixed;
+  inset: 0;
 }
 .map-page__canvas {
   flex: 1;
-  min-height: 320px;
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
+  width: 100%;
+  height: 100%;
   border-radius: 0;
   background: #fff;
 }
@@ -232,6 +236,15 @@ button, input, select, textarea { font: inherit; }
    (ymaps-2-1-NN-…) меняется вместе с патч-версией загружаемого API. */
 .map-page__canvas [class*="-map-copyrights-promo"] {
   display: none !important;
+}
+.map-marker {
+  width: 18px;
+  height: 18px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .35);
+  transform: translate(-50%, -50%);
 }
 
 .notice-tile {
