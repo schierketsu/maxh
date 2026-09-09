@@ -120,6 +120,8 @@ export async function lookupCompanyDetailsByInn(inn) {
     status: (data.state?.status && STATUS_LABELS[data.state.status]) ?? data.state?.status ?? null,
     registrationDate: formatDate(data.state?.registration_date),
     address: data.address?.unrestricted_value ?? data.address?.value ?? null,
+    lat: data.address?.data?.geo_lat ? Number(data.address.data.geo_lat) : null,
+    lon: data.address?.data?.geo_lon ? Number(data.address.data.geo_lon) : null,
     okved: data.okved ?? null,
     okvedName: data.okveds?.[0]?.name ?? null,
     managerName: data.management?.name ?? null,

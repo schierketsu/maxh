@@ -214,6 +214,26 @@ button, input, select, textarea { font: inherit; }
   padding-bottom: var(--home-toolbar-space);
 }
 
+.map-page {
+  min-height: 100dvh;
+  margin-top: -18px;
+}
+.map-page__canvas {
+  flex: 1;
+  min-height: 320px;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  border-radius: 0;
+  background: #fff;
+}
+/* Скрываем промо-блок Яндекса ("Как добраться" / "На такси" / "API") —
+   постоянная плашка на карте, не подавляется программными опциями API.
+   Селектор через [class*=...], т.к. префикс версии в имени класса
+   (ymaps-2-1-NN-…) меняется вместе с патч-версией загружаемого API. */
+.map-page__canvas [class*="-map-copyrights-promo"] {
+  display: none !important;
+}
+
 .notice-tile {
   display: flex;
   flex: 0 0 auto;

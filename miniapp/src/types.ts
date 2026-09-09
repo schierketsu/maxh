@@ -94,6 +94,8 @@ export interface CompanyDetails {
   status: string | null
   registrationDate: string | null
   address: string | null
+  lat: number | null
+  lon: number | null
   okved: string | null
   okvedName: string | null
   managerName: string | null
