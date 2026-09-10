@@ -45,12 +45,21 @@ function seedData() {
       requesterInn: null,
       requesterName: 'Демо-компания',
       isDemo: true,
+      status: 'active',
       rawText: null,
       createdAt: now,
       ...req,
     })),
     offers: [],
   }
+}
+
+/** Заявки, сохранённые до появления поля status, по умолчанию считаются активными. */
+function migrate(loaded) {
+  for (const request of loaded.requests) {
+    request.status ??= 'active'
+  }
+  return loaded
 }
 
 function load() {
@@ -61,7 +70,7 @@ function load() {
     return seeded
   }
   try {
-    return JSON.parse(readFileSync(DATA_PATH, 'utf8'))
+    return migrate(JSON.parse(readFileSync(DATA_PATH, 'utf8')))
   } catch {
     return seedData()
   }
@@ -110,6 +119,7 @@ export function createRequest({ requesterInn, requesterName, title, item, qty, r
     requesterInn,
     requesterName,
     isDemo: false,
+    status: 'active',
     title,
     item,
     qty: qty ?? null,
@@ -129,9 +139,26 @@ export function getRequest(id) {
   return data.requests.find((r) => r.id === id) ?? null
 }
 
+export function setRequestStatus(id, status) {
+  const request = getRequest(id)
+  if (!request) return null
+  request.status = status
+  save()
+  return request
+}
+
+export function deleteRequest(id) {
+  const index = data.requests.findIndex((r) => r.id === id)
+  if (index === -1) return false
+  data.requests.splice(index, 1)
+  data.offers = data.offers.filter((o) => o.requestId !== id)
+  save()
+  return true
+}
+
 export function listOpportunities(excludeInn, myOkved) {
   const cleaned = String(excludeInn ?? '').replace(/\D/g, '')
-  const open = data.requests.filter((r) => r.requesterInn !== cleaned)
+  const open = data.requests.filter((r) => r.requesterInn !== cleaned && r.status === 'active')
   if (!myOkved?.length) return open
   return [...open].sort((a, b) => {
     const aMatch = sharesOkved(myOkved, getCompany(a.requesterInn)?.okved) ? 1 : 0

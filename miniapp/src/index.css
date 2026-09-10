@@ -135,6 +135,13 @@ button, input, select, textarea { font: inherit; }
   line-height: 1;
 }
 
+.brand-accent-word {
+  color: #0065b1;
+  font-family: 'Styrene A LC', var(--family-brand);
+  font-weight: 900;
+  font-style: italic;
+}
+
 .gosuslugi-bar {
   position: fixed;
   left: 0;
@@ -245,8 +252,8 @@ button, input, select, textarea { font: inherit; }
   background: #fff;
 }
 .company-details__avatar-icon { width: 48px; height: 48px; object-fit: contain; }
-.company-details__profile-body { display: flex; flex-direction: column; gap: 2px; }
-.company-details__name { margin: 0; color: var(--ink-soft); font-size: 19px; font-weight: 700; }
+.company-details__profile-body { display: flex; flex-direction: column; align-self: stretch; gap: 2px; }
+.company-details__name { margin: 0; color: var(--ink); font-size: 19px; font-weight: 700; }
 .company-details__since { margin: 0; color: var(--ink-soft); font-size: 14px; font-weight: 400; }
 .company-details__rating { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
 .company-details__rating-value { color: var(--ink); font-size: 14px; font-weight: 700; }
@@ -262,8 +269,10 @@ button, input, select, textarea { font: inherit; }
 }
 
 .company-details__review {
+  width: 100vw;
   margin-top: 12px;
-  padding: 14px 16px;
+  margin-left: calc(50% - 50vw);
+  padding: 22px clamp(16px, 4vw, 24px) 14px;
   border-radius: 16px;
   background: #fff;
   overflow: hidden;
@@ -364,6 +373,13 @@ button, input, select, textarea { font: inherit; }
 .review-card__status-stars .is-filled { color: #ffcc00; }
 .review-card__status-text { color: var(--ink-soft); font-size: 14px; font-weight: 400; }
 .review-card__text { margin: 0; color: var(--ink); font-size: 14px; font-weight: 400; line-height: 1.4; }
+.company-details__review .review-card__text {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 
 .choose-mode {
   gap: 10px;
@@ -403,6 +419,37 @@ button, input, select, textarea { font: inherit; }
   box-shadow: 0 1px 4px rgba(0, 0, 0, .35);
   transform: translate(-50%, -50%);
 }
+.map-marker--blue { background: var(--blue); cursor: pointer; }
+
+.map-popup {
+  position: fixed;
+  left: clamp(16px, 4vw, 24px);
+  right: clamp(16px, 4vw, 24px);
+  bottom: calc(var(--home-toolbar-space) + 12px);
+  z-index: 45;
+  padding: 16px 44px 16px 16px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, .15);
+}
+.map-popup__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--sky);
+  color: var(--ink);
+  font-size: 13px;
+  cursor: pointer;
+}
+.map-popup__name { margin: 0 0 4px; color: var(--ink); font-size: 15px; font-weight: 700; }
+.map-popup__need { margin: 0; color: var(--ink-soft); font-size: 14px; line-height: 1.4; }
 
 .notice-tile {
   display: flex;
@@ -658,7 +705,7 @@ button, input, select, textarea { font: inherit; }
   padding: 14px 16px;
   border: 0;
   border-radius: 14px;
-  background: var(--sky);
+  background: #fff;
   color: var(--ink);
   font: inherit;
   font-size: 1rem;
@@ -668,6 +715,29 @@ button, input, select, textarea { font: inherit; }
 }
 .b2b-textarea::placeholder { color: var(--ink-soft); }
 .b2b-textarea:focus { outline: none; box-shadow: 0 0 0 2px var(--blue); }
+.b2b-textarea--main { height: 40vh; resize: none; }
+
+.b2b-field { display: flex; flex-direction: column; gap: 6px; }
+.b2b-field__label { color: var(--ink-soft); font-size: 13px; font-weight: 500; }
+.b2b-field__input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 1rem;
+}
+.b2b-field__input:focus { outline: none; box-shadow: 0 0 0 2px var(--blue); }
+.b2b-field-row { display: flex; gap: 10px; }
+.b2b-field-row .b2b-field { flex: 1; min-width: 0; }
+
+.b2b-my-requests__header { display: flex; margin-bottom: 4px; }
+
+.b2b-parse-cta,
+.b2b-parse-cta:hover,
+.b2b-parse-cta:active { background: #0065b1; }
 
 .b2b-offer-form { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
 .b2b-offer-cta { width: 100%; margin-top: 12px; }
@@ -703,6 +773,23 @@ button, input, select, textarea { font: inherit; }
 }
 .requests-table__status { flex: 0 0 auto; color: var(--ink-soft); font-size: 13px; font-weight: 500; }
 .requests-table__status.is-active { color: var(--blue-strong); font-weight: 600; }
+.requests-table__row.is-inactive { opacity: .5; }
+.requests-table__action {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--sky);
+  color: var(--ink-soft);
+  font-size: 12px;
+  cursor: pointer;
+}
+.requests-table__action--danger { color: var(--red); }
 
 @media (max-width: 380px) {
   .app-shell { padding-inline: 14px; }

@@ -24,6 +24,10 @@ const EXTRACT_TOOL = {
         description: 'Срок в формате ISO-даты YYYY-MM-DD, если его можно определить из текста и текущей даты',
       },
       budget: { type: ['number', 'null'], description: 'Бюджет в рублях, если указан' },
+      notes: {
+        type: ['string', 'null'],
+        description: 'Любые дополнительные детали из текста, не поместившиеся в другие поля',
+      },
     },
     required: ['title', 'item'],
   },

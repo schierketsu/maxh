@@ -1,4 +1,4 @@
-import type { B2BOffer, B2BRequest, B2BRequestWithOffers } from '../types'
+import type { B2BOffer, B2BRequest, B2BRequestStatus, B2BRequestWithOffers, ParsedB2BRequest } from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 
@@ -28,16 +28,42 @@ export async function fetchRequest(id: string): Promise<B2BRequest> {
   return data.request
 }
 
+export async function parseRequestText(text: string): Promise<ParsedB2BRequest> {
+  const res = await fetch(`${API_BASE}/api/b2b/requests/parse`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  })
+  const data = await handle<{ parsed: ParsedB2BRequest }>(res)
+  return data.parsed
+}
+
 export async function createRequest(
   inn: string,
-  text: string,
+  fields: ParsedB2BRequest,
+  rawText: string | null,
 ): Promise<{ request: B2BRequest; notified: number }> {
   const res = await fetch(`${API_BASE}/api/b2b/requests`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ inn, text }),
+    body: JSON.stringify({ inn, ...fields, rawText }),
   })
   return handle(res)
+}
+
+export async function setRequestStatus(id: string, status: B2BRequestStatus): Promise<B2BRequest> {
+  const res = await fetch(`${API_BASE}/api/b2b/requests/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  })
+  const data = await handle<{ request: B2BRequest }>(res)
+  return data.request
+}
+
+export async function deleteRequest(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/b2b/requests/${id}`, { method: 'DELETE' })
+  await handle(res)
 }
 
 export async function submitOffer(

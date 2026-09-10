@@ -120,11 +120,9 @@ export function CompanyDetailsOverlay({ company, onClose }: CompanyDetailsOverla
               </div>
 
               {showReviews && (
-                <>
-                  <div className="company-details__review">
-                    <div className="company-details__review-inner" key={reviewIndex}>
-                      <ReviewCard item={review} index={reviewIndex} />
-                    </div>
+                <div className="company-details__review">
+                  <div className="company-details__review-inner" key={reviewIndex}>
+                    <ReviewCard item={review} index={reviewIndex} />
                   </div>
                   <button
                     type="button"
@@ -133,7 +131,7 @@ export function CompanyDetailsOverlay({ company, onClose }: CompanyDetailsOverla
                   >
                     все отзывы
                   </button>
-                </>
+                </div>
               )}
             </div>
           </div>

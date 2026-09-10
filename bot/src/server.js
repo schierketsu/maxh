@@ -2,11 +2,13 @@ import { createServer } from 'node:http'
 import {
   addOffer,
   createRequest,
+  deleteRequest,
   findMatchingCompanies,
   getCompany,
   getRequest,
   listMyRequests,
   listOpportunities,
+  setRequestStatus,
   upsertCompany,
 } from './b2bStore.js'
 import { lookupCompanyByInn, lookupCompanyDetailsByInn } from './dadata.js'
@@ -155,12 +157,28 @@ export function startServer(port = process.env.PORT ?? 3001) {
       return
     }
 
+    if (req.method === 'POST' && pathname === '/api/b2b/requests/parse') {
+      try {
+        const { text } = await readJsonBody(req)
+        if (!text?.trim()) {
+          sendJson(res, 400, { error: 'Нужен text' })
+          return
+        }
+        const parsed = await extractRequest(text.trim())
+        sendJson(res, 200, { parsed })
+      } catch (error) {
+        console.error('Parse request failed:', error.message)
+        sendJson(res, 502, { error: 'Не удалось разобрать текст' })
+      }
+      return
+    }
+
     if (req.method === 'POST' && pathname === '/api/b2b/requests') {
       try {
-        const { inn, text } = await readJsonBody(req)
+        const { inn, title, item, qty, region, deadline, budget, notes, rawText } = await readJsonBody(req)
         const cleanedInn = String(inn ?? '').replace(/\D/g, '')
-        if (!cleanedInn || !text?.trim()) {
-          sendJson(res, 400, { error: 'Нужны inn и text' })
+        if (!cleanedInn || !title?.trim() || !item?.trim()) {
+          sendJson(res, 400, { error: 'Нужны inn, title и item' })
           return
         }
 
@@ -176,12 +194,17 @@ export function startServer(port = process.env.PORT ?? 3001) {
           okved: dadataCompany.okved,
         })
 
-        const parsed = await extractRequest(text.trim())
         const request = createRequest({
           requesterInn: cleanedInn,
           requesterName: requesterCompany.name,
-          rawText: text.trim(),
-          ...parsed,
+          title: title.trim(),
+          item: item.trim(),
+          qty: qty ?? null,
+          region: region ?? null,
+          deadline: deadline ?? null,
+          budget: budget ?? null,
+          notes: notes ?? null,
+          rawText: rawText ?? null,
         })
 
         const notified = await notifyMatches(request, requesterCompany)
@@ -190,6 +213,36 @@ export function startServer(port = process.env.PORT ?? 3001) {
         console.error('Create request failed:', error.message)
         sendJson(res, 502, { error: 'Не удалось создать заявку' })
       }
+      return
+    }
+
+    const requestStatusMatch = pathname.match(/^\/api\/b2b\/requests\/([^/]+)$/)
+    if (req.method === 'PATCH' && requestStatusMatch) {
+      try {
+        const { status } = await readJsonBody(req)
+        if (status !== 'active' && status !== 'inactive') {
+          sendJson(res, 400, { error: 'status должен быть active или inactive' })
+          return
+        }
+        const request = setRequestStatus(requestStatusMatch[1], status)
+        if (!request) {
+          sendJson(res, 404, { error: 'Заявка не найдена' })
+          return
+        }
+        sendJson(res, 200, { request })
+      } catch (error) {
+        console.error('Update request status failed:', error.message)
+        sendJson(res, 502, { error: 'Не удалось обновить заявку' })
+      }
+      return
+    }
+    if (req.method === 'DELETE' && requestStatusMatch) {
+      const ok = deleteRequest(requestStatusMatch[1])
+      if (!ok) {
+        sendJson(res, 404, { error: 'Заявка не найдена' })
+        return
+      }
+      sendJson(res, 200, { ok: true })
       return
     }
 

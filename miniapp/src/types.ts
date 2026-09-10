@@ -54,11 +54,14 @@ export interface MatchedProgram {
   nextActions: string[]
 }
 
+export type B2BRequestStatus = 'active' | 'inactive'
+
 export interface B2BRequest {
   id: string
   requesterInn: string | null
   requesterName: string
   isDemo: boolean
+  status: B2BRequestStatus
   title: string
   item: string
   qty: number | null
@@ -68,6 +71,16 @@ export interface B2BRequest {
   notes: string | null
   rawText: string | null
   createdAt: string
+}
+
+export interface ParsedB2BRequest {
+  title: string
+  item: string
+  qty: number | null
+  region: string | null
+  deadline: string | null
+  budget: number | null
+  notes: string | null
 }
 
 export interface B2BOffer {

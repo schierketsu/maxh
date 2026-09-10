@@ -6,10 +6,21 @@ import mapCustomization from '../assets/customization.json'
 
 type Status = 'loading' | 'ready' | 'no-company' | 'no-location' | 'error'
 
+// Демо-заявки других компаний — для наглядности сети на карте, координаты
+// вокруг центра Москвы рядом с расположением нашей компании.
+const FAKE_NEARBY_REQUESTS = [
+  { name: 'ООО «Молочный Дом»', need: 'нужна оптовая поставка молока', lat: 55.7423, lon: 37.6156 },
+  { name: 'ИП Соколова — овощи и фрукты', need: 'ищем поставщика свежих овощей', lat: 55.7301, lon: 37.5809 },
+  { name: 'ООО «Фреш Маркет»', need: 'нужна выпечка для полок магазина', lat: 55.7489, lon: 37.6002 },
+  { name: 'ООО «Пекарня №1»', need: 'требуется мука высшего сорта', lat: 55.7275, lon: 37.6234 },
+  { name: 'ИП Кузьмин — кейтеринг', need: 'ищем поставщика десертов на мероприятия', lat: 55.7398, lon: 37.5701 },
+]
+
 export function MapPage() {
   const { company } = useCompany()
   const mapRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<Status>('loading')
+  const [selected, setSelected] = useState<(typeof FAKE_NEARBY_REQUESTS)[number] | null>(null)
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow
@@ -61,6 +72,16 @@ export function MapPage() {
         markerEl.title = details.shortName
         map.addChild(new ymaps3.YMapMarker({ coordinates: coords }, markerEl))
 
+        for (const item of FAKE_NEARBY_REQUESTS) {
+          const fakeMarkerEl = document.createElement('div')
+          fakeMarkerEl.className = 'map-marker map-marker--blue'
+          fakeMarkerEl.title = `${item.name} — ${item.need}`
+          fakeMarkerEl.addEventListener('click', () => setSelected(item))
+          map.addChild(
+            new ymaps3.YMapMarker({ coordinates: [item.lon, item.lat] }, fakeMarkerEl),
+          )
+        }
+
         setStatus('ready')
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -74,6 +95,7 @@ export function MapPage() {
     return () => {
       cancelled = true
       map?.destroy()
+      setSelected(null)
     }
   }, [company])
 
@@ -85,6 +107,21 @@ export function MapPage() {
       {status === 'no-location' && <p className="empty">Не удалось определить адрес компании.</p>}
       {status === 'error' && <p className="empty">Не удалось загрузить карту.</p>}
       <div ref={mapRef} className="map-page__canvas" />
+
+      {selected && (
+        <div className="map-popup">
+          <button
+            type="button"
+            className="map-popup__close"
+            aria-label="Закрыть"
+            onClick={() => setSelected(null)}
+          >
+            ✕
+          </button>
+          <p className="map-popup__name">{selected.name}</p>
+          <p className="map-popup__need">{selected.need}</p>
+        </div>
+      )}
     </div>
   )
 }
