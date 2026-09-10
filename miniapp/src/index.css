@@ -11,6 +11,13 @@
   --green: #34c759;
   --orange: #ff9500;
   --red: #ff3b30;
+  --yellow: #ffd400;
+  --palette-blue: #2b73fe;
+  --palette-lime: #a8f000;
+  --palette-purple: #6f2bfe;
+  --palette-red: #ef3124;
+  --palette-pink: #fe34c6;
+  --palette-gray-light: #ebebeb;
   --home-toolbar-space: calc(50px + env(safe-area-inset-bottom));
   font-family: var(--family-base);
   color: var(--ink);
@@ -108,12 +115,51 @@ button, input, select, textarea { font: inherit; }
 }
 
 .page { display: flex; flex-direction: column; gap: 22px; }
-.onboarding { padding-top: 8px; }
+.onboarding {
+  padding-top: 8px;
+  padding-bottom: 110px;
+  /* Без min-height у .page (flex-контейнера) нечего распределять между
+     flex:1 детьми — плитки сжимались до 0 и были невидимы. */
+  min-height: calc(100dvh - 18px - 32px - env(safe-area-inset-bottom));
+}
+
+.mode-select-tiles { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+.mode-select-tiles__row { display: flex; gap: 12px; }
+.mode-select-tiles__row .mode-select-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  aspect-ratio: 1;
+}
+.mode-select-tile { border-radius: 20px; background: #fff; }
+.mode-select-tile--blue { background: var(--palette-blue); }
+.mode-select-tile__label { margin: 0; color: #fff; font-size: 1rem; font-weight: 400; line-height: 1.4; }
+.mode-select-tile__label--blue { color: var(--palette-blue); }
+.mode-select-tile__label--centered {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: max-content;
+  max-width: calc(100% - 48px);
+  text-align: center;
+}
+.mode-select-tile--wide { position: relative; flex: 1; margin-bottom: 28px; padding: 20px 36px 20px 24px; }
+.mode-select-brand {
+  margin: 0;
+  color: var(--palette-blue);
+  font-family: 'Styrene A LC', var(--family-brand);
+  font-size: clamp(48px, 14vw, 68px);
+  font-weight: 900;
+  font-style: italic;
+  line-height: 1;
+  text-align: right;
+}
 .dashboard { padding-bottom: calc(64px + var(--home-toolbar-space)); }
 .b2b-home, .b2b-my-requests, .b2b-new-request, .b2b-offer { padding-bottom: var(--home-toolbar-space); }
 
 .brand-block { padding: 8px 4px 2px; }
-.brand-block--center { padding-top: 0; }
 .brand-block h1 {
   max-width: 560px;
   margin: 3px 0 12px;
@@ -123,20 +169,9 @@ button, input, select, textarea { font: inherit; }
   line-height: 1.12;
   letter-spacing: -0.02em;
 }
-.brand-block--center { text-align: center; }
-.brand-block--center h1 {
-  max-width: none;
-  margin: 0 auto;
-  color: #0065b1;
-  font-family: 'Styrene A LC', var(--family-brand);
-  font-size: clamp(48px, 14vw, 68px);
-  font-weight: 900;
-  font-style: italic;
-  line-height: 1;
-}
 
 .brand-accent-word {
-  color: #0065b1;
+  color: var(--palette-blue);
   font-family: 'Styrene A LC', var(--family-brand);
   font-weight: 900;
   font-style: italic;
@@ -247,24 +282,37 @@ button, input, select, textarea { font: inherit; }
   justify-content: center;
   width: 96px;
   height: 96px;
-  border: 6px solid #ffcc00;
+  border: 6px solid var(--yellow);
   border-radius: 50%;
   background: #fff;
 }
 .company-details__avatar-icon { width: 48px; height: 48px; object-fit: contain; }
 .company-details__profile-body { display: flex; flex-direction: column; align-self: stretch; gap: 2px; }
-.company-details__name { margin: 0; color: var(--ink); font-size: 19px; font-weight: 700; }
-.company-details__since { margin: 0; color: var(--ink-soft); font-size: 14px; font-weight: 400; }
+.company-details__name {
+  margin: 0;
+  color: var(--ink);
+  font-family: 'Styrene A LC', var(--family-brand);
+  font-size: clamp(30px, 9vw, 40px);
+  font-weight: 700;
+  font-style: normal;
+}
+.company-details__since { margin: 0; color: var(--ink-soft); font-size: 1rem; font-weight: 400; }
 .company-details__rating { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
-.company-details__rating-value { color: var(--ink); font-size: 14px; font-weight: 700; }
-.company-details__stars { position: relative; display: inline-block; font-size: 17px; letter-spacing: 2px; }
+.company-details__rating-value {
+  color: var(--ink);
+  font-family: 'Styrene A LC', var(--family-brand);
+  font-size: clamp(30px, 9vw, 40px);
+  font-weight: 700;
+  font-style: normal;
+}
+.company-details__stars { position: relative; display: inline-block; font-size: clamp(36px, 11vw, 49px); letter-spacing: 2px; }
 .company-details__stars-bg { color: #c7c7cc; }
 .company-details__stars-fg {
   position: absolute;
   inset: 0;
   overflow: hidden;
   width: var(--fill, 0%);
-  color: #ffcc00;
+  color: var(--yellow);
   white-space: nowrap;
 }
 
@@ -320,7 +368,8 @@ button, input, select, textarea { font: inherit; }
   background: #fff;
   color: var(--ink);
   font: inherit;
-  font-size: 14px;
+  font-size: 1rem;
+  font-weight: 400;
   font-weight: 400;
   white-space: nowrap;
   cursor: pointer;
@@ -341,16 +390,15 @@ button, input, select, textarea { font: inherit; }
 .reviews-summary__value { color: var(--ink); font-size: 56px; font-weight: 700; line-height: 1; }
 .reviews-summary__top-meta { display: flex; flex-direction: column; gap: 3px; }
 .reviews-summary__stars { font-size: 28px; letter-spacing: 4px; line-height: 1; }
-.reviews-summary__caption { margin: 0; color: var(--ink-soft); font-size: 13px; line-height: 1.2; }
-.reviews-summary__breakdown { display: flex; flex-direction: column; gap: 10px; }
+.reviews-summary__caption { margin: 0; color: var(--ink-soft); font-size: 1rem; font-weight: 400; line-height: 1.2; }
+.reviews-summary__breakdown { display: flex; flex-direction: column; gap: 4px; }
 .reviews-summary__row { display: flex; align-items: center; gap: 12px; }
-.reviews-summary__row-stars { display: flex; gap: 1px; color: #c7c7cc; font-size: 13px; }
-.reviews-summary__row-stars .is-filled { color: #ffcc00; }
-.reviews-summary__bar { flex: 1; height: 6px; border-radius: 3px; background: var(--separator); overflow: hidden; }
+.reviews-summary__row-stars { display: flex; gap: 1px; color: #c7c7cc; font-size: 18px; line-height: 1; }
+.reviews-summary__row-stars .is-filled { color: var(--yellow); }
+.reviews-summary__bar { position: relative; top: 1px; flex: 1; height: 6px; border-radius: 3px; background: var(--separator); overflow: hidden; }
 .reviews-summary__bar-fill { display: block; height: 100%; border-radius: 3px; background: var(--ink-soft); }
-.reviews-summary__row-count { min-width: 16px; color: var(--ink-soft); font-size: 13px; text-align: right; }
 
-.review-cards { display: flex; flex-direction: column; gap: 18px; margin-top: 20px; }
+.review-cards { display: flex; flex-direction: column; gap: 28px; margin-top: 28px; }
 .review-card { display: flex; flex-direction: column; gap: 8px; }
 .review-card__head { display: flex; align-items: center; gap: 10px; }
 .review-card__avatar {
@@ -366,13 +414,13 @@ button, input, select, textarea { font: inherit; }
   font-weight: 700;
 }
 .review-card__meta { min-width: 0; flex: 1; }
-.review-card__name { margin: 0; color: var(--ink); font-size: 14px; font-weight: 700; }
-.review-card__date { margin: 2px 0 0; color: var(--ink-soft); font-size: 14px; font-weight: 400; }
+.review-card__name { margin: 0; color: var(--ink); font-size: 1rem; font-weight: 400; line-height: 1.2; }
+.review-card__date { margin: 0; color: var(--ink-soft); font-size: 1rem; font-weight: 400; line-height: 1.2; }
 .review-card__status { display: flex; align-items: center; gap: 6px; margin: 0; }
-.review-card__status-stars { color: #c7c7cc; font-size: 12px; letter-spacing: 1px; }
-.review-card__status-stars .is-filled { color: #ffcc00; }
-.review-card__status-text { color: var(--ink-soft); font-size: 14px; font-weight: 400; }
-.review-card__text { margin: 0; color: var(--ink); font-size: 14px; font-weight: 400; line-height: 1.4; }
+.review-card__status-stars { color: #c7c7cc; font-size: 18px; letter-spacing: 1px; }
+.review-card__status-stars .is-filled { color: var(--yellow); }
+.review-card__status-text { color: var(--ink-soft); font-size: 1rem; font-weight: 400; }
+.review-card__text { margin: 0; color: var(--ink); font-size: 1rem; font-weight: 400; line-height: 1.4; }
 .company-details__review .review-card__text {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -415,11 +463,11 @@ button, input, select, textarea { font: inherit; }
   height: 18px;
   border: 3px solid #fff;
   border-radius: 50%;
-  background: var(--red);
+  background: var(--palette-red);
   box-shadow: 0 1px 4px rgba(0, 0, 0, .35);
   transform: translate(-50%, -50%);
 }
-.map-marker--blue { background: var(--blue); cursor: pointer; }
+.map-marker--blue { background: var(--palette-blue); cursor: pointer; }
 
 .map-popup {
   position: fixed;
@@ -427,7 +475,7 @@ button, input, select, textarea { font: inherit; }
   right: clamp(16px, 4vw, 24px);
   bottom: calc(var(--home-toolbar-space) + 12px);
   z-index: 45;
-  padding: 16px 44px 16px 16px;
+  padding: 16px 44px 20px 16px;
   border-radius: 16px;
   background: #fff;
   box-shadow: 0 4px 20px rgba(0, 0, 0, .15);
@@ -439,17 +487,20 @@ button, input, select, textarea { font: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border: 0;
   border-radius: 50%;
   background: var(--sky);
   color: var(--ink);
-  font-size: 13px;
+  font-size: 15px;
   cursor: pointer;
 }
-.map-popup__name { margin: 0 0 4px; color: var(--ink); font-size: 15px; font-weight: 700; }
-.map-popup__need { margin: 0; color: var(--ink-soft); font-size: 14px; line-height: 1.4; }
+.map-popup__name { margin: 0 0 4px; color: var(--ink); font-size: 1rem; font-weight: 700; }
+.map-popup__need { margin: 0; color: var(--ink-soft); font-size: 1rem; font-weight: 400; line-height: 1.4; }
+.map-popup__deadline { margin: 8px 0 0; color: var(--ink-soft); font-size: 1rem; font-weight: 400; line-height: 1.4; }
+.map-popup__footer { display: flex; margin-top: 12px; }
+.map-popup__cta { margin-top: 0; }
 
 .notice-tile {
   display: flex;
@@ -476,7 +527,7 @@ button, input, select, textarea { font: inherit; }
   right: 20px;
   color: #fff;
   font-family: 'Monomakh', var(--family-brand);
-  font-size: clamp(24px, 7.5vw, 32px);
+  font-size: clamp(30px, 9vw, 40px);
   font-weight: 400;
   line-height: 1.08;
   text-align: left;
@@ -737,7 +788,7 @@ button, input, select, textarea { font: inherit; }
 
 .b2b-parse-cta,
 .b2b-parse-cta:hover,
-.b2b-parse-cta:active { background: #0065b1; }
+.b2b-parse-cta:active { background: var(--palette-blue); }
 
 .b2b-offer-form { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
 .b2b-offer-cta { width: 100%; margin-top: 12px; }

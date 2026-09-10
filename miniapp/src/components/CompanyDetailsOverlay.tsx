@@ -22,7 +22,13 @@ const REVIEW_INTERVAL_MS = 10000
 
 const TORTY_MOSKVA_INN = '7724351831'
 const TORTY_MOSKVA_RATING = 4.7
-const AVATAR_COLORS = ['var(--blue)', 'var(--green)', 'var(--orange)', 'var(--red)', '#8e8e93']
+const AVATAR_COLORS = [
+  'var(--palette-blue)',
+  'var(--palette-lime)',
+  'var(--palette-purple)',
+  'var(--palette-red)',
+  'var(--palette-pink)',
+]
 
 const TORTY_MOSKVA_REVIEWS = [
   { title: 'ООО «КофеПоинт»', initial: 'К', rating: 5, date: '2 сентября 2026', text: 'Отличное качество, стабильно работают уже второй год.' },
@@ -189,7 +195,6 @@ export function CompanyDetailsOverlay({ company, onClose }: CompanyDetailsOverla
                           style={{ width: `${(count / TORTY_MOSKVA_REVIEWS.length) * 100}%` }}
                         />
                       </span>
-                      <span className="reviews-summary__row-count">{count}</span>
                     </div>
                   )
                 })}

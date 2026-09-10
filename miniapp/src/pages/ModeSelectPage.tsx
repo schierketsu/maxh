@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@maxhub/max-ui'
-import gosuslugiLogo from '../assets/gosuslugi.gif'
+import gosuslugiLogo from '../assets/gos_icon.png'
 import { fetchCompanyByInn } from '../lib/companyApi'
 import { useCompany } from '../context/CompanyContext'
 
@@ -36,9 +36,22 @@ export function ModeSelectPage() {
 
   return (
     <div className="page onboarding">
-      <header className="brand-block brand-block--center">
-        <h1>мера</h1>
-      </header>
+      <div className="mode-select-tiles">
+        <div className="mode-select-tiles__row">
+          <div className="mode-select-tile mode-select-tile--blue">
+            <span className="mode-select-tile__label">Текст</span>
+          </div>
+          <div className="mode-select-tile">
+            <span className="mode-select-tile__label mode-select-tile__label--blue">Текст</span>
+          </div>
+        </div>
+        <div className="mode-select-tile mode-select-tile--wide">
+          <h1 className="mode-select-brand">мера</h1>
+          <span className="mode-select-tile__label mode-select-tile__label--blue mode-select-tile__label--centered">
+            Визуальная составляющая и маркетинговый слоган
+          </span>
+        </div>
+      </div>
 
       <div className="gosuslugi-bar">
         {failed && <p className="empty">Не удалось связать аккаунт. Попробуйте ещё раз.</p>}

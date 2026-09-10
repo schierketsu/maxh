@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Navigate } from 'react-router-dom'
 import { CompanyDetailsOverlay } from '../components/CompanyDetailsOverlay'
 import { useCompany } from '../context/CompanyContext'
 import cakeIcon from '../assets/icon_cake.png'
@@ -7,6 +8,10 @@ import govImage from '../assets/гос.png'
 export function ChooseModePage() {
   const { company } = useCompany()
   const [showDetails, setShowDetails] = useState(false)
+
+  if (!company) {
+    return <Navigate to="/" replace />
+  }
 
   return (
     <div className="page onboarding choose-mode">
