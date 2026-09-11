@@ -1,11 +1,8 @@
 import { useEffect, useState, type CSSProperties } from 'react'
+import { Navigate, useNavigate } from 'react-router-dom'
+import { useCompany } from '../context/CompanyContext'
 import cakeIcon from '../assets/icon_cake.png'
-import type { CompanyProfile, CompanyType } from '../types'
-
-interface CompanyDetailsOverlayProps {
-  company: CompanyProfile | null
-  onClose: () => void
-}
+import type { CompanyType } from '../types'
 
 const LEGAL_FORM_LABELS: Record<CompanyType, string> = {
   ООО: 'Общество с ограниченной ответственностью',
@@ -75,7 +72,9 @@ function ReviewCard({ item, index }: { item: (typeof TORTY_MOSKVA_REVIEWS)[numbe
   )
 }
 
-export function CompanyDetailsOverlay({ company, onClose }: CompanyDetailsOverlayProps) {
+export function ProfilePage() {
+  const { company } = useCompany()
+  const navigate = useNavigate()
   const showReviews = company?.inn === TORTY_MOSKVA_INN
   const [reviewIndex, setReviewIndex] = useState(0)
   const [showAllReviews, setShowAllReviews] = useState(false)
@@ -88,60 +87,70 @@ export function CompanyDetailsOverlay({ company, onClose }: CompanyDetailsOverla
     return () => clearInterval(timer)
   }, [showReviews])
 
+  if (!company) {
+    return <Navigate to="/" replace />
+  }
+
   const ratingValue = showReviews ? TORTY_MOSKVA_RATING : 0
   const starFillStyle = { '--fill': `${(ratingValue / 5) * 100}%` } as CSSProperties
   const review = TORTY_MOSKVA_REVIEWS[reviewIndex]
 
   return (
-    <div className="company-details">
-      <button type="button" className="company-details__close" aria-label="Закрыть" onClick={onClose}>
-        ✕
-      </button>
-
-      <div className="company-details__content">
-        {!company && (
-          <p className="empty">Компания не определена — авторизуйтесь через Госуслуги ещё раз.</p>
-        )}
-
-        {company && (
-          <div className="company-details__profile">
-            <div className="company-details__avatar-wrap">
-              <div className="company-details__avatar">
-                <img className="company-details__avatar-icon" src={cakeIcon} alt="" />
-              </div>
-            </div>
-
-            <div className="company-details__profile-body">
-              <h1 className="company-details__name">{formatDisplayName(company.name)}</h1>
-              <p className="company-details__since">На Мера с {SINCE_YEAR} года</p>
-              <p className="company-details__since">{LEGAL_FORM_LABELS[company.companyType]}</p>
-              <div className="company-details__rating">
-                <span className="company-details__rating-value">
-                  {ratingValue.toFixed(1).replace('.', ',')}
-                </span>
-                <span className="company-details__stars" style={starFillStyle} aria-hidden="true">
-                  <span className="company-details__stars-bg">★★★★★</span>
-                  <span className="company-details__stars-fg">★★★★★</span>
-                </span>
-              </div>
-
-              {showReviews && (
-                <div className="company-details__review">
-                  <div className="company-details__review-inner" key={reviewIndex}>
-                    <ReviewCard item={review} index={reviewIndex} />
+    <>
+      <div className="company-details">
+        <div className="company-details__content">
+          <div className="company-details__profile-card">
+            <div className="company-details__profile">
+              <div className="company-details__header-row">
+                <div className="company-details__avatar-wrap">
+                  <div className="company-details__avatar">
+                    <img className="company-details__avatar-icon" src={cakeIcon} alt="" />
                   </div>
-                  <button
-                    type="button"
-                    className="company-details__all-reviews"
-                    onClick={() => setShowAllReviews(true)}
-                  >
-                    все отзывы
-                  </button>
                 </div>
-              )}
+                <h1 className="company-details__name">{formatDisplayName(company.name)}</h1>
+              </div>
+
+              <div className="company-details__profile-body">
+                <p className="company-details__since">На Мера с {SINCE_YEAR} года</p>
+                <p className="company-details__since">{LEGAL_FORM_LABELS[company.companyType]}</p>
+                <div className="company-details__rating">
+                  <span className="company-details__rating-value">
+                    {ratingValue.toFixed(1).replace('.', ',')}
+                  </span>
+                  <span className="company-details__stars" style={starFillStyle} aria-hidden="true">
+                    <span className="company-details__stars-bg">★★★★★</span>
+                    <span className="company-details__stars-fg">★★★★★</span>
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-        )}
+
+          {showReviews && (
+            <div className="company-details__review">
+              <button
+                type="button"
+                className="company-details__all-reviews company-details__all-reviews--top"
+                onClick={() => setShowAllReviews(true)}
+              >
+                все отзывы
+              </button>
+              <div className="company-details__review-inner" key={reviewIndex}>
+                <ReviewCard item={review} index={reviewIndex} />
+              </div>
+            </div>
+          )}
+
+          <div className="company-details__panel">
+            <button
+              type="button"
+              className="company-details__all-reviews company-details__all-reviews--top"
+              onClick={() => navigate('/b2b/requests')}
+            >
+              все заявки
+            </button>
+          </div>
+        </div>
       </div>
 
       {showAllReviews && (
@@ -153,14 +162,6 @@ export function CompanyDetailsOverlay({ company, onClose }: CompanyDetailsOverla
             onClick={() => setShowAllReviews(false)}
           >
             назад
-          </button>
-          <button
-            type="button"
-            className="company-details__close"
-            aria-label="Закрыть"
-            onClick={() => setShowAllReviews(false)}
-          >
-            ✕
           </button>
           <div className="company-reviews-list__content">
             <div className="reviews-summary">
@@ -209,6 +210,6 @@ export function CompanyDetailsOverlay({ company, onClose }: CompanyDetailsOverla
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }

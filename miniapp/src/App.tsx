@@ -11,6 +11,7 @@ import { ChooseModePage } from './pages/ChooseModePage'
 import { DashboardPage } from './pages/DashboardPage'
 import { MapPage } from './pages/MapPage'
 import { ModeSelectPage } from './pages/ModeSelectPage'
+import { ProfilePage } from './pages/ProfilePage'
 
 const ENTRY_PATHS = ['/']
 
@@ -24,6 +25,7 @@ function AppRoutes() {
         <Route path="/" element={<ModeSelectPage />} />
         <Route path="/modes" element={<ChooseModePage />} />
         <Route path="/map" element={<MapPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
 
         <Route
           path="/gov"

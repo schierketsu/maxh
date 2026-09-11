@@ -12,8 +12,8 @@ export function HomeToolbar() {
       <button type="button" className="home-toolbar__btn" onClick={() => navigate('/map')}>
         карта
       </button>
-      <button type="button" className="home-toolbar__btn" onClick={() => navigate('/b2b/requests')}>
-        заявки
+      <button type="button" className="home-toolbar__btn" onClick={() => navigate('/profile')}>
+        профиль
       </button>
     </div>
   )
