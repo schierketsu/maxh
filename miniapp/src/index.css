@@ -169,13 +169,7 @@ button, input, select, textarea { font: inherit; }
   line-height: 1.12;
   letter-spacing: -0.02em;
 }
-
-.brand-accent-word {
-  color: var(--palette-blue);
-  font-family: 'Styrene A LC', var(--family-brand);
-  font-weight: 900;
-  font-style: italic;
-}
+.brand-block__accent { color: var(--palette-blue); }
 
 .gosuslugi-bar {
   position: fixed;
@@ -512,7 +506,7 @@ button, input, select, textarea { font: inherit; }
   border-radius: 24px;
   background: #fff;
   color: var(--ink-soft);
-  font-size: 19px;
+  font-size: 1rem;
   font-weight: 400;
   text-align: center;
 }
@@ -554,7 +548,7 @@ button, input, select, textarea { font: inherit; }
   background: transparent;
   color: var(--ink-soft);
   font: inherit;
-  font-size: 14px;
+  font-size: 1rem;
   font-weight: 400;
   text-align: center;
   cursor: pointer;
@@ -809,7 +803,7 @@ button, input, select, textarea { font: inherit; }
   border-bottom: 1px solid var(--separator);
 }
 .requests-table__row:last-child { border-bottom: 0; }
-.requests-table__row--empty { justify-content: center; padding: 32px 16px; color: var(--ink-soft); font-size: 15px; }
+.requests-table__row--empty { justify-content: center; padding: 32px 16px; color: var(--ink-soft); font-size: 1rem; }
 .requests-table__dot { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: #c7c7cc; }
 .requests-table__dot.is-active { background: var(--green); }
 .requests-table__title {

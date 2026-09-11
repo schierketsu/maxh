@@ -183,9 +183,7 @@ export function B2BNewRequestPage() {
         <h1>
           расскажите,
           <br />
-          а остальное
-          <br />
-          сделаем <span className="brand-accent-word">мы</span>
+          <span className="brand-block__accent">мы вас поймем</span>
         </h1>
       </header>
 
