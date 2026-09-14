@@ -297,11 +297,10 @@ button, input, select, textarea { font: inherit; }
   justify-content: center;
   width: 96px;
   height: 96px;
-  border: 6px solid var(--yellow);
   border-radius: 50%;
-  background: #fff;
+  background: var(--palette-red);
 }
-.company-details__avatar-icon { width: 48px; height: 48px; object-fit: contain; }
+.company-details__avatar-icon { width: 60px; height: 60px; object-fit: contain; }
 .company-details__profile-body { display: flex; flex-direction: column; align-self: stretch; gap: 2px; }
 .company-details__name {
   flex: 1;
@@ -339,7 +338,8 @@ button, input, select, textarea { font: inherit; }
   white-space: nowrap;
 }
 
-.company-details__review {
+.company-details__review { margin-top: 12px; }
+.company-details__panel {
   width: 100vw;
   min-height: 216px;
   margin-top: 12px;
@@ -349,22 +349,6 @@ button, input, select, textarea { font: inherit; }
   background: #fff;
   overflow: hidden;
 }
-.company-details__panel {
-  width: 100vw;
-  min-height: 216px;
-  margin-top: 12px;
-  margin-left: calc(50% - 50vw);
-  padding: 22px clamp(16px, 4vw, 24px) 40px;
-  border-radius: 16px;
-  background: #fff;
-}
-.company-details__panel .company-details__all-reviews { margin: 0; }
-@keyframes review-slide-in {
-  from { transform: translateX(32px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-.company-details__review-inner { animation: review-slide-in .4s ease; }
-
 .company-details__all-reviews {
   display: block;
   width: 100%;
@@ -379,7 +363,21 @@ button, input, select, textarea { font: inherit; }
   text-align: center;
   cursor: pointer;
 }
-.company-details__all-reviews--top { margin: 0 0 16px; color: var(--ink); text-align: left; }
+.company-details__all-reviews--top {
+  width: 100vw;
+  margin-top: -22px;
+  margin-right: 0;
+  margin-bottom: 16px;
+  margin-left: calc(50% - 50vw);
+  padding: 16px clamp(16px, 4vw, 24px);
+  border-radius: 16px;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+  text-align: left;
+}
+.company-details__review .company-details__all-reviews--top { margin-top: 0; background: var(--palette-blue); }
+.company-details__panel .company-details__all-reviews--top { background: var(--palette-red); }
 
 .company-reviews-list {
   position: fixed;

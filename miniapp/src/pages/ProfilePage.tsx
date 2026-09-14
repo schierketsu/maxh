@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useCompany } from '../context/CompanyContext'
 import cakeIcon from '../assets/icon_cake.png'
@@ -15,9 +15,9 @@ function formatDisplayName(rawName: string): string {
 }
 
 const SINCE_YEAR = 2026
-const REVIEW_INTERVAL_MS = 10000
 
 const TORTY_MOSKVA_INN = '7724351831'
+const TORTY_MOSKVA_NAME = 'ВКУСНЫЙ КЕЙК'
 const TORTY_MOSKVA_RATING = 4.7
 const AVATAR_COLORS = [
   'var(--palette-blue)',
@@ -41,7 +41,15 @@ const TORTY_MOSKVA_REVIEWS = [
 ]
 const RATING_STARS = [5, 4, 3, 2, 1]
 
-function ReviewCard({ item, index }: { item: (typeof TORTY_MOSKVA_REVIEWS)[number]; index: number }) {
+function ReviewCard({
+  item,
+  index,
+  showStatus = true,
+}: {
+  item: (typeof TORTY_MOSKVA_REVIEWS)[number]
+  index: number
+  showStatus?: boolean
+}) {
   return (
     <div className="review-card">
       <div className="review-card__head">
@@ -57,16 +65,18 @@ function ReviewCard({ item, index }: { item: (typeof TORTY_MOSKVA_REVIEWS)[numbe
           <p className="review-card__date">{item.date}</p>
         </div>
       </div>
-      <p className="review-card__status">
-        <span className="review-card__status-stars" aria-hidden="true">
-          {[0, 1, 2, 3, 4].map((position) => (
-            <span key={position} className={position < item.rating ? 'is-filled' : ''}>
-              ★
-            </span>
-          ))}
-        </span>
-        <span className="review-card__status-text">Заказ выполнен</span>
-      </p>
+      {showStatus && (
+        <p className="review-card__status">
+          <span className="review-card__status-stars" aria-hidden="true">
+            {[0, 1, 2, 3, 4].map((position) => (
+              <span key={position} className={position < item.rating ? 'is-filled' : ''}>
+                ★
+              </span>
+            ))}
+          </span>
+          <span className="review-card__status-text">Заказ выполнен</span>
+        </p>
+      )}
       <p className="review-card__text">{item.text}</p>
     </div>
   )
@@ -76,16 +86,7 @@ export function ProfilePage() {
   const { company } = useCompany()
   const navigate = useNavigate()
   const showReviews = company?.inn === TORTY_MOSKVA_INN
-  const [reviewIndex, setReviewIndex] = useState(0)
   const [showAllReviews, setShowAllReviews] = useState(false)
-
-  useEffect(() => {
-    if (!showReviews) return
-    const timer = setInterval(() => {
-      setReviewIndex((index) => (index + 1) % TORTY_MOSKVA_REVIEWS.length)
-    }, REVIEW_INTERVAL_MS)
-    return () => clearInterval(timer)
-  }, [showReviews])
 
   if (!company) {
     return <Navigate to="/" replace />
@@ -93,7 +94,6 @@ export function ProfilePage() {
 
   const ratingValue = showReviews ? TORTY_MOSKVA_RATING : 0
   const starFillStyle = { '--fill': `${(ratingValue / 5) * 100}%` } as CSSProperties
-  const review = TORTY_MOSKVA_REVIEWS[reviewIndex]
 
   return (
     <>
@@ -107,7 +107,9 @@ export function ProfilePage() {
                     <img className="company-details__avatar-icon" src={cakeIcon} alt="" />
                   </div>
                 </div>
-                <h1 className="company-details__name">{formatDisplayName(company.name)}</h1>
+                <h1 className="company-details__name">
+                  {showReviews ? TORTY_MOSKVA_NAME : formatDisplayName(company.name)}
+                </h1>
               </div>
 
               <div className="company-details__profile-body">
@@ -135,9 +137,6 @@ export function ProfilePage() {
               >
                 все отзывы
               </button>
-              <div className="company-details__review-inner" key={reviewIndex}>
-                <ReviewCard item={review} index={reviewIndex} />
-              </div>
             </div>
           )}
 
