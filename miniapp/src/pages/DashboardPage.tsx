@@ -1,27 +1,27 @@
-import { useEffect, useState } from 'react'
-import { Navigate } from 'react-router-dom'
-import { OpportunitySummary } from '../components/OpportunitySummary'
-import { ProgramCard } from '../components/ProgramCard'
+import { useEffect, useMemo } from 'react'
+import { Navigate, useNavigate } from 'react-router-dom'
+import { BenefitCard } from '../components/BenefitCard'
 import { useCompany } from '../context/CompanyContext'
-import { isCompanyLiked, setCompanyLiked } from '../lib/likedCompanies'
+import { govBenefits } from '../data/benefits'
 import { getWebApp } from '../lib/maxBridge'
+import { matchRequirementStatus } from '../lib/matching'
+
+const STEPS = [
+  { number: '01', label: 'Выберите меру поддержки' },
+  { number: '02', label: 'Подайте заявку' },
+  { number: '03', label: 'Дождитесь решения' },
+  { number: '04', label: 'Получите поддержку' },
+]
 
 export function DashboardPage() {
-  const { company, matches, clearCompany } = useCompany()
-  const [liked, setLiked] = useState(false)
-  const [subscribed, setSubscribed] = useState(false)
-
-  useEffect(() => {
-    setLiked(company ? isCompanyLiked(company.inn) : false)
-  }, [company])
+  const { company } = useCompany()
+  const navigate = useNavigate()
 
   useEffect(() => {
     const wa = getWebApp()
     if (!wa?.BackButton) return
 
-    const onBack = () => {
-      clearCompany()
-    }
+    const onBack = () => navigate('/modes')
 
     wa.BackButton.show()
     wa.BackButton.onClick(onBack)
@@ -29,71 +29,50 @@ export function DashboardPage() {
       wa.BackButton?.offClick(onBack)
       wa.BackButton?.hide()
     }
-  }, [clearCompany])
+  }, [navigate])
+
+  const govMatches = useMemo(() => {
+    if (!company) return []
+    return govBenefits
+      .map((benefit, index) => ({
+        benefit,
+        index,
+        status: benefit.forceStatus ?? matchRequirementStatus(company, benefit.requirements),
+      }))
+      .filter((item) => item.status !== 'ineligible')
+  }, [company])
 
   if (!company) {
     return <Navigate to="/gov" replace />
   }
 
-  const toggleLiked = () => {
-    const next = !liked
-    setLiked(next)
-    setCompanyLiked(company, next)
-  }
-
   return (
     <div className="page dashboard">
-      <div className="dash-panel">
-        <OpportunitySummary company={company} matches={matches} />
-      </div>
+      <button
+        type="button"
+        className="company-reviews-list__back"
+        aria-label="Назад"
+        onClick={() => navigate('/modes')}
+      >
+        назад
+      </button>
 
-      <section className="programs">
-        <div className="section-head">
-          <h2>Подходящие меры</h2>
-        </div>
-
-        {matches.length === 0 ? (
-          <p className="empty">
-            Пока нет подходящих программ. Уточните профиль или попробуйте другую
-            компанию.
-          </p>
-        ) : (
-          <div className="program-list">
-            {matches.map((match) => (
-              <ProgramCard key={match.program.id} match={match} />
-            ))}
+      <div className="dashboard__steps">
+        {STEPS.map((step) => (
+          <div className="dashboard__step" key={step.number}>
+            <span className="dashboard__step-number">{step.number}</span>
+            <p className="dashboard__step-label">{step.label}</p>
           </div>
-        )}
-      </section>
-
-      <div className="dash-toolbar">
-        <button
-          type="button"
-          className="dash-toolbar__btn dash-toolbar__btn--icon"
-          aria-label="Назад"
-          onClick={clearCompany}
-        >
-          <span aria-hidden="true">⬅️</span>
-        </button>
-        <button
-          type="button"
-          className={`dash-toolbar__btn dash-toolbar__btn--icon${liked ? ' is-active' : ''}`}
-          aria-label="Лайк"
-          aria-pressed={liked}
-          onClick={toggleLiked}
-        >
-          <span aria-hidden="true">{liked ? '❤️' : '🤍'}</span>
-        </button>
-        <button
-          type="button"
-          className={`dash-toolbar__btn dash-toolbar__btn--icon${subscribed ? ' is-active' : ''}`}
-          aria-label="Уведомления"
-          aria-pressed={subscribed}
-          onClick={() => setSubscribed((v) => !v)}
-        >
-          <span aria-hidden="true">{subscribed ? '🔔' : '🔕'}</span>
-        </button>
+        ))}
       </div>
+
+      <section className="benefits">
+        <div className="benefits__list">
+          {govMatches.map(({ benefit, index, status }) => (
+            <BenefitCard key={benefit.id} benefit={benefit} index={index} statusTag={status} />
+          ))}
+        </div>
+      </section>
     </div>
   )
 }

@@ -109,12 +109,24 @@ function scoreToStatus(score: number, unmetCount: number): ProgramStatus {
   return 'ineligible'
 }
 
-function matchOne(company: CompanyProfile, program: SupportProgram): MatchedProgram {
-  const results = program.requirements.map((req) => checkRequirement(company, req))
+function scoreRequirements(company: CompanyProfile, requirements: ProgramRequirement[]) {
+  const results = requirements.map((req) => checkRequirement(company, req))
   const met = results.filter((r) => r.met)
   const unmet = results.filter((r) => !r.met)
   const score = Math.round((met.length / results.length) * 100)
   const status = scoreToStatus(score, unmet.length)
+  return { score, status, met, unmet }
+}
+
+export function matchRequirementStatus(
+  company: CompanyProfile,
+  requirements: ProgramRequirement[],
+): ProgramStatus {
+  return scoreRequirements(company, requirements).status
+}
+
+function matchOne(company: CompanyProfile, program: SupportProgram): MatchedProgram {
+  const { score, status, met, unmet } = scoreRequirements(company, program.requirements)
 
   const nextActions = unmet.slice(0, 3).map((u) => {
     if (u.label.toLowerCase().includes('задолжен')) {

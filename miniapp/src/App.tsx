@@ -13,7 +13,7 @@ import { MapPage } from './pages/MapPage'
 import { ModeSelectPage } from './pages/ModeSelectPage'
 import { ProfilePage } from './pages/ProfilePage'
 
-const ENTRY_PATHS = ['/']
+const NO_TOOLBAR_PATHS = ['/', '/gov/dashboard']
 
 function AppRoutes() {
   const { company } = useCompany()
@@ -44,7 +44,7 @@ function AppRoutes() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {!ENTRY_PATHS.includes(location.pathname) && <HomeToolbar />}
+      {!NO_TOOLBAR_PATHS.includes(location.pathname) && <HomeToolbar />}
     </>
   )
 }
