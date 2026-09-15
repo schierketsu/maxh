@@ -122,38 +122,62 @@ button, input, select, textarea { font: inherit; }
      flex:1 детьми — плитки сжимались до 0 и были невидимы. */
   min-height: calc(100dvh - 18px - 32px - env(safe-area-inset-bottom));
 }
+/* .gosuslugi-bar — position:fixed, её собственный отступ до края экрана
+   (padding-bottom: 26px + safe-area) не зависит от этого значения — здесь
+   только резерв места в потоке, чтобы содержимое не заезжало под неё. */
+.onboarding.mode-select-page { padding-bottom: 40px; }
 
 .mode-select-tiles { display: flex; flex-direction: column; gap: 12px; flex: 1; }
-.mode-select-tiles__row { display: flex; gap: 12px; }
+.mode-select-tiles__row {
+  display: flex;
+  gap: 12px;
+  /* Растягиваем до самых краёв экрана: по бокам — стандартный full-bleed
+     трюк, сверху — гасим накопленный отступ .app-shell (18px) + .onboarding
+     (8px), чтобы верхняя плитка легла вплотную к верхней границе экрана. */
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-top: -26px;
+}
 .mode-select-tiles__row .mode-select-tile {
   display: flex;
   align-items: center;
   justify-content: center;
   flex: 1;
-  aspect-ratio: 1;
+  /* Раньше в ряду было две квадратные (1:1) плитки — теперь плитка одна на
+     всю ширину ряда, но высота должна остаться прежней (как у половины
+     ряда), поэтому 2:1, а не 1:1 от новой, вдвое большей ширины. */
+  aspect-ratio: 1.7 / 1;
+  overflow: hidden;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
 }
 .mode-select-tile { border-radius: 20px; background: #fff; }
-.mode-select-tile--blue { background: var(--palette-blue); }
-.mode-select-tile__label { margin: 0; color: #fff; font-size: 1rem; font-weight: 400; line-height: 1.4; }
-.mode-select-tile__label--blue { color: var(--palette-blue); }
-.mode-select-tile__label--centered {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: max-content;
-  max-width: calc(100% - 48px);
-  text-align: center;
-}
-.mode-select-tile--wide { position: relative; flex: 1; margin-bottom: 28px; padding: 20px 36px 20px 24px; }
+.mode-select-tile--blue { background: #2d78fd; }
+.mode-select-tiles__row .mode-select-tile--icon-left { justify-content: flex-start; padding-left: 0; gap: 26px; }
+.mode-select-tile__icon { width: auto; height: 122%; margin-left: -74px; object-fit: contain; transform: translateY(14px) rotate(-15deg); }
+.mode-select-tile__text { display: flex; flex-direction: column; align-items: flex-end; padding-right: 4px; }
 .mode-select-brand {
   margin: 0;
-  color: var(--palette-blue);
+  color: #fff;
   font-family: 'Styrene A LC', var(--family-brand);
-  font-size: clamp(48px, 14vw, 68px);
+  font-size: clamp(36px, 9.5vw, 48px);
   font-weight: 900;
-  font-style: italic;
+  font-style: normal;
   line-height: 1;
+  text-align: right;
+  /* transform не занимает место в потоке — остальные элементы колонки
+     (.mode-select-tile__caption и т.д.) не сдвигаются. */
+  transform-origin: right center;
+  transform: translateY(-32px) scale(1.45);
+}
+.mode-select-tile__caption {
+  margin: 4px 0 0;
+  color: #fff;
+  font-family: 'Styrene A LC', var(--family-brand);
+  font-size: clamp(18px, 5.5vw, 24px);
+  font-weight: 900;
+  font-style: normal;
+  line-height: 1.08;
   text-align: right;
 }
 .dashboard {
@@ -927,6 +951,19 @@ button, input, select, textarea { font: inherit; }
 }
 .benefits__title-accent { color: var(--palette-blue); font-weight: 900; font-style: italic; }
 .benefits__list { display: flex; flex-direction: column; gap: 12px; }
+.benefits__more {
+  align-self: center;
+  padding: 12px 26px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: .95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.benefits__more:active { opacity: .85; }
 
 .benefit-card {
   display: flex;

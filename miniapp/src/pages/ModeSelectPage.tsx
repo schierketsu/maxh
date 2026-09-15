@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@maxhub/max-ui'
 import gosuslugiLogo from '../assets/gos_icon.png'
+import mapTileIcon from '../assets/back_pod_panel.png'
 import { fetchCompanyByInn } from '../lib/companyApi'
 import { useCompany } from '../context/CompanyContext'
 
@@ -35,21 +36,24 @@ export function ModeSelectPage() {
   }
 
   return (
-    <div className="page onboarding">
+    <div className="page onboarding mode-select-page">
       <div className="mode-select-tiles">
         <div className="mode-select-tiles__row">
-          <div className="mode-select-tile mode-select-tile--blue">
-            <span className="mode-select-tile__label">Текст</span>
+          <div className="mode-select-tile mode-select-tile--blue mode-select-tile--icon-left">
+            <img className="mode-select-tile__icon" src={mapTileIcon} alt="" />
+            <div className="mode-select-tile__text">
+              <h1 className="mode-select-brand">мера</h1>
+              <p className="mode-select-tile__caption">
+                находи
+                <br />
+                партнёров
+                <br />
+                своему
+                <br />
+                бизнесу
+              </p>
+            </div>
           </div>
-          <div className="mode-select-tile">
-            <span className="mode-select-tile__label mode-select-tile__label--blue">Текст</span>
-          </div>
-        </div>
-        <div className="mode-select-tile mode-select-tile--wide">
-          <h1 className="mode-select-brand">мера</h1>
-          <span className="mode-select-tile__label mode-select-tile__label--blue mode-select-tile__label--centered">
-            Визуальная составляющая и маркетинговый слоган
-          </span>
         </div>
       </div>
 

@@ -1,12 +1,16 @@
+import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { BenefitCard } from '../components/BenefitCard'
 import { useCompany } from '../context/CompanyContext'
 import { benefits } from '../data/benefits'
 import govImage from '../assets/гос.png'
 
+const BENEFITS_PAGE_SIZE = 2
+
 export function ChooseModePage() {
   const { company } = useCompany()
   const navigate = useNavigate()
+  const [visibleCount, setVisibleCount] = useState(BENEFITS_PAGE_SIZE)
 
   if (!company) {
     return <Navigate to="/" replace />
@@ -33,9 +37,18 @@ export function ChooseModePage() {
           ваша <span className="benefits__title-accent">мера</span>
         </h2>
         <div className="benefits__list">
-          {benefits.map((benefit, index) => (
+          {benefits.slice(0, visibleCount).map((benefit, index) => (
             <BenefitCard key={benefit.id} benefit={benefit} index={index} />
           ))}
+          {visibleCount < benefits.length && (
+            <button
+              type="button"
+              className="benefits__more"
+              onClick={() => setVisibleCount((prev) => Math.min(prev + BENEFITS_PAGE_SIZE, benefits.length))}
+            >
+              показать ещё
+            </button>
+          )}
         </div>
       </section>
     </div>
