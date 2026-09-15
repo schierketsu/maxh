@@ -128,25 +128,23 @@ export function ProfilePage() {
             </div>
           </div>
 
-          {showReviews && (
-            <div className="company-details__review">
+          <div className="company-details__quick-row">
+            {showReviews && (
               <button
                 type="button"
-                className="company-details__all-reviews company-details__all-reviews--top"
+                className="company-details__quick-tile company-details__quick-tile--reviews"
                 onClick={() => setShowAllReviews(true)}
               >
-                все отзывы
+                отзывы
               </button>
-            </div>
-          )}
-
-          <div className="company-details__panel">
+            )}
             <button
               type="button"
-              className="company-details__all-reviews company-details__all-reviews--top"
+              className="company-details__quick-tile company-details__quick-tile--requests"
               onClick={() => navigate('/b2b/requests')}
             >
-              все заявки
+              <span className="company-details__quick-tile-placeholder">?</span>
+              заявки
             </button>
           </div>
         </div>

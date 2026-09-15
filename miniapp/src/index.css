@@ -395,46 +395,42 @@ button, input, select, textarea { font: inherit; }
   white-space: nowrap;
 }
 
-.company-details__review { margin-top: 12px; }
-.company-details__panel {
+.company-details__quick-row {
+  display: flex;
+  gap: 12px;
   width: 100vw;
-  min-height: 216px;
   margin-top: 12px;
   margin-left: calc(50% - 50vw);
-  padding: 22px clamp(16px, 4vw, 24px) 40px;
-  border-radius: 16px;
-  background: #fff;
-  overflow: hidden;
 }
-.company-details__all-reviews {
-  display: block;
-  width: 100%;
-  margin: 10px 0 0;
-  padding: 0;
+.company-details__quick-tile {
+  position: relative;
+  flex: 1;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 20px;
   border: 0;
-  background: none;
-  color: var(--ink-soft);
-  font: inherit;
-  font-size: 19px;
-  font-weight: 400;
-  text-align: center;
-  cursor: pointer;
-}
-.company-details__all-reviews--top {
-  width: 100vw;
-  margin-top: -22px;
-  margin-right: 0;
-  margin-bottom: 16px;
-  margin-left: calc(50% - 50vw);
-  padding: 16px clamp(16px, 4vw, 24px);
   border-radius: 16px;
   color: #fff;
+  font: inherit;
   font-size: 17px;
   font-weight: 600;
-  text-align: left;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, .35);
+  cursor: pointer;
 }
-.company-details__review .company-details__all-reviews--top { margin-top: 0; background: var(--palette-blue); }
-.company-details__panel .company-details__all-reviews--top { background: var(--palette-red); }
+.company-details__quick-tile--reviews {
+  background: var(--palette-blue) url('./assets/icon_rewies.png') center / cover no-repeat;
+}
+.company-details__quick-tile--requests { background: var(--palette-red); }
+.company-details__quick-tile-placeholder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 40px;
+  font-weight: 700;
+}
 
 .company-reviews-list {
   position: fixed;
@@ -511,13 +507,6 @@ button, input, select, textarea { font: inherit; }
 .review-card__status-stars .is-filled { color: var(--yellow); }
 .review-card__status-text { color: var(--ink-soft); font-size: 1rem; font-weight: 400; }
 .review-card__text { margin: 0; color: var(--ink); font-size: 1rem; font-weight: 400; line-height: 1.4; }
-.company-details__review .review-card__text {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
 
 .choose-mode {
   gap: 10px;
@@ -937,6 +926,7 @@ button, input, select, textarea { font: inherit; }
 .requests-table__action--danger { background: var(--palette-blue); color: #fff; }
 .requests-table__action-icon { width: 12px; height: 12px; }
 .requests-table__action--pause { background: var(--palette-blue); }
+.requests-table__action--play { background: var(--palette-blue); }
 
 .benefits { display: flex; flex-direction: column; gap: 20px; margin-top: 8px; }
 .benefits__title {

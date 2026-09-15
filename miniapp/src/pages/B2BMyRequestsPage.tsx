@@ -8,6 +8,7 @@ import { formatMoney } from '../lib/matching'
 import type { B2BRequestWithOffers } from '../types'
 import closeIcon from '../assets/icon_close.png'
 import pauseIcon from '../assets/icon_pause.png'
+import playIcon from '../assets/icon_play.png'
 
 function offersWord(n: number) {
   const mod100 = n % 100
@@ -118,7 +119,7 @@ export function B2BMyRequestsPage() {
                   </span>
                   <button
                     type="button"
-                    className={`requests-table__action${isActive ? ' requests-table__action--pause' : ''}`}
+                    className={`requests-table__action ${isActive ? 'requests-table__action--pause' : 'requests-table__action--play'}`}
                     aria-label={isActive ? 'Деактивировать' : 'Активировать'}
                     onClick={(event) => {
                       event.stopPropagation()
@@ -128,7 +129,7 @@ export function B2BMyRequestsPage() {
                     {isActive ? (
                       <img className="requests-table__action-icon" src={pauseIcon} alt="" />
                     ) : (
-                      '▶'
+                      <img className="requests-table__action-icon" src={playIcon} alt="" />
                     )}
                   </button>
                   <button
