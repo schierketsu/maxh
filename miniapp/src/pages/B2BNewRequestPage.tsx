@@ -179,13 +179,9 @@ export function B2BNewRequestPage() {
 
   return (
     <div className="page b2b-new-request">
-      <header className="brand-block">
-        <h1>
-          расскажите,
-          <br />
-          <span className="brand-block__accent">мы вас поймем</span>
-        </h1>
-      </header>
+      <Button type="button" className="b2b-parse-cta" onClick={() => navigate(-1)}>
+        отменить
+      </Button>
 
       <form className="b2b-request-form" onSubmit={parse}>
         <textarea

@@ -822,7 +822,7 @@ button, input, select, textarea { font: inherit; }
   padding: 0 2px;
   color: var(--ink);
   font-family: 'Styrene A LC', var(--family-brand);
-  font-size: clamp(30px, 9vw, 40px);
+  font-size: clamp(48px, 14vw, 68px);
   font-weight: 700;
   font-style: normal;
   line-height: 1.15;
@@ -877,6 +877,21 @@ button, input, select, textarea { font: inherit; }
   cursor: pointer;
 }
 .benefit-card__cta:active { opacity: .85; }
+
+.benefit-card--solid .benefit-card__title,
+.benefit-card--solid .benefit-card__desc {
+  color: #fff;
+}
+.benefit-card--solid .benefit-card__desc { margin-bottom: 18px; }
+.benefit-card--solid .benefit-card__tags { align-items: center; justify-content: space-between; }
+.benefit-card--solid .benefit-card__tag { background: rgba(255, 255, 255, 0.22); }
+.benefit-card--solid .benefit-card__cta--icon {
+  width: auto;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+}
+.benefit-card__cta-icon { display: block; width: 18px; height: 18px; }
 
 @media (max-width: 380px) {
   .app-shell { padding-inline: 14px; }
