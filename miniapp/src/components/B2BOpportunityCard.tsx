@@ -12,11 +12,11 @@ export function B2BOpportunityCard({ request }: { request: B2BRequest }) {
         <span className="program-card__amount">
           {request.budget ? `до ${formatMoney(request.budget)}` : 'бюджет не указан'}
         </span>
-        {request.region && <span className="program-card__deadline">{request.region}</span>}
+        {request.deadline && <span className="program-card__deadline">до {request.deadline}</span>}
       </div>
 
-      <h3 className="program-card__title">{request.title}</h3>
-      <p className="program-card__desc">{request.item}</p>
+      <h3 className="program-card__title">{request.item}</h3>
+      {request.notes && <p className="program-card__desc">{request.notes}</p>}
 
       <Button
         type="button"

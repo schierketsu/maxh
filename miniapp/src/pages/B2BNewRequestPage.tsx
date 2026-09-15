@@ -43,8 +43,8 @@ export function B2BNewRequestPage() {
 
   const confirm = async () => {
     if (!fields) return
-    if (!fields.title.trim() || !fields.item.trim()) {
-      setError('Заполните название и что требуется')
+    if (!fields.item.trim()) {
+      setError('Заполните, что требуется')
       return
     }
     setLoading(true)
@@ -66,28 +66,37 @@ export function B2BNewRequestPage() {
 
   if (step === 'done') {
     return (
-      <div className="page b2b-new-request">
-        <header className="brand-block">
-          <h1>Заявка создана</h1>
-        </header>
-        <p className="empty">
+      <div className="page b2b-new-request b2b-new-request--done">
+        <p className="b2b-done__notice">
           {notified > 0
             ? `Уведомили ${notified} подходящих компаний в MAX.`
             : 'Подходящих компаний с известным MAX-аккаунтом пока не нашлось — заявка всё равно видна в общей ленте возможностей.'}
         </p>
-        <Button type="button" onClick={() => navigate('/b2b/requests')}>
-          К моим заявкам
-        </Button>
+        <div className="b2b-done__center">
+          <h1 className="b2b-done__title">
+            Заявка
+            <br />
+            создана
+          </h1>
+          <Button type="button" className="b2b-parse-cta" onClick={() => navigate('/b2b/requests')}>
+            к моим заявкам
+          </Button>
+        </div>
       </div>
     )
   }
 
   if (step === 'confirm' && fields) {
     return (
-      <div className="page b2b-new-request">
-        <header className="brand-block">
-          <h1>Проверьте заявку</h1>
-        </header>
+      <div className="page b2b-new-request b2b-new-request--confirm">
+        <button
+          type="button"
+          className="company-reviews-list__back"
+          aria-label="Назад"
+          onClick={() => setStep('input')}
+        >
+          назад
+        </button>
 
         <form
           className="b2b-request-form"
@@ -97,15 +106,7 @@ export function B2BNewRequestPage() {
           }}
         >
           <label className="b2b-field">
-            <span className="b2b-field__label">Название</span>
-            <input
-              className="b2b-field__input"
-              value={fields.title}
-              onChange={(event) => updateField('title', event.target.value)}
-            />
-          </label>
-          <label className="b2b-field">
-            <span className="b2b-field__label">Что требуется</span>
+            <span className="b2b-field__label">{direction === 'supply' ? 'что предлагаете' : 'что требуется'}</span>
             <input
               className="b2b-field__input"
               value={fields.item}
@@ -114,18 +115,17 @@ export function B2BNewRequestPage() {
           </label>
           <div className="b2b-field-row">
             <label className="b2b-field">
-              <span className="b2b-field__label">Количество</span>
+              <span className="b2b-field__label">количество</span>
               <input
                 className="b2b-field__input"
-                type="number"
+                type="text"
+                placeholder="например: 20 кг"
                 value={fields.qty ?? ''}
-                onChange={(event) =>
-                  updateField('qty', event.target.value ? Number(event.target.value) : null)
-                }
+                onChange={(event) => updateField('qty', event.target.value || null)}
               />
             </label>
             <label className="b2b-field">
-              <span className="b2b-field__label">Срок</span>
+              <span className="b2b-field__label">срок</span>
               <input
                 className="b2b-field__input"
                 type="date"
@@ -134,29 +134,19 @@ export function B2BNewRequestPage() {
               />
             </label>
           </div>
-          <div className="b2b-field-row">
-            <label className="b2b-field">
-              <span className="b2b-field__label">Регион</span>
-              <input
-                className="b2b-field__input"
-                value={fields.region ?? ''}
-                onChange={(event) => updateField('region', event.target.value || null)}
-              />
-            </label>
-            <label className="b2b-field">
-              <span className="b2b-field__label">Бюджет, ₽</span>
-              <input
-                className="b2b-field__input"
-                type="number"
-                value={fields.budget ?? ''}
-                onChange={(event) =>
-                  updateField('budget', event.target.value ? Number(event.target.value) : null)
-                }
-              />
-            </label>
-          </div>
           <label className="b2b-field">
-            <span className="b2b-field__label">Дополнительное</span>
+            <span className="b2b-field__label">бюджет, ₽</span>
+            <input
+              className="b2b-field__input"
+              type="number"
+              value={fields.budget ?? ''}
+              onChange={(event) =>
+                updateField('budget', event.target.value ? Number(event.target.value) : null)
+              }
+            />
+          </label>
+          <label className="b2b-field">
+            <span className="b2b-field__label">комментарий</span>
             <textarea
               className="b2b-textarea"
               rows={3}
@@ -167,11 +157,8 @@ export function B2BNewRequestPage() {
 
           {error && <p className="empty">{error}</p>}
 
-          <Button type="submit" loading={loading} disabled={loading}>
-            Подтвердить заявку
-          </Button>
-          <Button type="button" variant="secondary" disabled={loading} onClick={() => setStep('input')}>
-            Изменить текст
+          <Button type="submit" className="b2b-parse-cta" loading={loading} disabled={loading}>
+            подтвердить заявку
           </Button>
         </form>
       </div>

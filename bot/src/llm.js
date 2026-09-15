@@ -1,7 +1,11 @@
 import { fetch as undiciFetch } from 'undici'
 
 const CLOUDRU_URL = 'https://foundation-models.api.cloud.ru/v1/chat/completions'
-const MODEL = 'ai-sage/GigaChat3-10B-A1.8B'
+// GigaChat (обоих размеров, через Cloud.ru) на этом эндпоинте отдаёт битый
+// JSON в аргументах function calling — проверено вживую на реальных заявках.
+// gpt-oss-120b (открытые веса, тоже хостится на Cloud.ru, не "Внешняя")
+// стабильно возвращает валидный JSON с корректным разбиением полей.
+const MODEL = 'openai/gpt-oss-120b'
 
 function loadApiKey() {
   const key = process.env.CLOUDRU_API_KEY
@@ -17,26 +21,37 @@ const EXTRACT_TOOL = {
     parameters: {
       type: 'object',
       properties: {
-        title: { type: 'string', description: 'Короткая понятная формулировка заявки, до 60 символов' },
-        item: { type: 'string', description: 'Что именно требуется — товар или услуга' },
-        qty: { type: ['number', 'null'], description: 'Количество, если указано явно' },
-        region: { type: ['string', 'null'], description: 'Регион или город, если указан' },
+        item: {
+          type: 'string',
+          description:
+            'Что именно требуется или предлагается — только название товара/услуги с описательными признаками (сорт, характеристики). БЕЗ количества, цены и срока — они идут в отдельные поля.',
+        },
+        qty: {
+          type: ['string', 'null'],
+          description:
+            'Количество вместе с единицей измерения одной строкой, если указано явно — например "20 кг", "500 л", "3 палеты", "50 человек", "10 шт". Единицу измерения не выдумывай, если её нет в тексте — оставь только число.',
+        },
         deadline: {
           type: ['string', 'null'],
-          description: 'Срок в формате ISO-даты YYYY-MM-DD, если его можно определить из текста и текущей даты',
+          description:
+            'Срок в формате ISO-даты YYYY-MM-DD. Если в тексте есть любое упоминание срока — конкретная дата, "до завтра", "на следующей неделе", "через 3 дня", "срочно" и т.п. — обязательно переведи его в дату относительно сегодняшнего числа и укажи здесь (не в notes). Если срока нет вообще — null.',
         },
-        budget: { type: ['number', 'null'], description: 'Бюджет в рублях, если указан' },
+        budget: {
+          type: ['number', 'null'],
+          description:
+            'Бюджет или цена в рублях, если указана — только число. Разговорные сокращения переводи в рубли: "2к"/"2 к" = 2000, "15к" = 15000, "1kk"/"1 млн" = 1000000.',
+        },
         notes: {
           type: ['string', 'null'],
           description: 'Любые дополнительные детали из текста, не поместившиеся в другие поля',
         },
       },
-      required: ['title', 'item'],
+      required: ['item'],
     },
   },
 }
 
-/** Разбирает свободный текст заявки в структурированные поля через GigaChat (Cloud.ru Foundation Models). */
+/** Разбирает свободный текст заявки в структурированные поля через Cloud.ru Foundation Models. */
 export async function extractRequest(text, direction = 'demand') {
   const today = new Date().toISOString().slice(0, 10)
   const intro =

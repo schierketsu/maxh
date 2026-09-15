@@ -64,10 +64,8 @@ export interface B2BRequest {
   isDemo: boolean
   status: B2BRequestStatus
   direction: B2BRequestDirection
-  title: string
   item: string
-  qty: number | null
-  region: string | null
+  qty: string | null
   deadline: string | null
   budget: number | null
   notes: string | null
@@ -76,10 +74,8 @@ export interface B2BRequest {
 }
 
 export interface ParsedB2BRequest {
-  title: string
   item: string
-  qty: number | null
-  region: string | null
+  qty: string | null
   deadline: string | null
   budget: number | null
   notes: string | null

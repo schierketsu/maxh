@@ -15,7 +15,8 @@ export DADATA_API_KEY=ваш_ключ   # PowerShell: $env:DADATA_API_KEY = "...
 ```
 
 Для разбора B2B-заявок свободным текстом нужен ключ Cloud.ru Foundation Models
-(foundation-models.api.cloud.ru, модель `ai-sage/GigaChat3-10B-A1.8B`):
+(foundation-models.api.cloud.ru, модель `openai/gpt-oss-120b` — GigaChat на
+этом шлюзе отдаёт битый JSON в function calling, проверено):
 
 ```bash
 export CLOUDRU_API_KEY=ваш_ключ

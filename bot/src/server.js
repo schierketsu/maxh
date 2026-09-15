@@ -87,8 +87,7 @@ async function notifyMatches(request, requesterCompany) {
         [
           `🤝 Новая возможность для вашей компании`,
           '',
-          `**${request.title}**`,
-          request.item,
+          `**${request.item}**`,
           request.budget ? `Бюджет: до ${request.budget.toLocaleString('ru-RU')} ₽` : null,
           request.deadline ? `Срок: до ${request.deadline}` : null,
           '',
@@ -175,10 +174,10 @@ export function startServer(port = process.env.PORT ?? 3001) {
 
     if (req.method === 'POST' && pathname === '/api/b2b/requests') {
       try {
-        const { inn, title, item, qty, region, deadline, budget, notes, rawText, direction } = await readJsonBody(req)
+        const { inn, item, qty, deadline, budget, notes, rawText, direction } = await readJsonBody(req)
         const cleanedInn = String(inn ?? '').replace(/\D/g, '')
-        if (!cleanedInn || !title?.trim() || !item?.trim()) {
-          sendJson(res, 400, { error: 'Нужны inn, title и item' })
+        if (!cleanedInn || !item?.trim()) {
+          sendJson(res, 400, { error: 'Нужны inn и item' })
           return
         }
 
@@ -197,10 +196,8 @@ export function startServer(port = process.env.PORT ?? 3001) {
         const request = createRequest({
           requesterInn: cleanedInn,
           requesterName: requesterCompany.name,
-          title: title.trim(),
           item: item.trim(),
           qty: qty ?? null,
-          region: region ?? null,
           deadline: deadline ?? null,
           budget: budget ?? null,
           notes: notes ?? null,
@@ -289,7 +286,7 @@ export function startServer(port = process.env.PORT ?? 3001) {
             await sendMessage(
               requesterCompany.userId,
               [
-                `📩 Новое предложение по заявке «${request.title}»`,
+                `📩 Новое предложение по заявке «${request.item}»`,
                 '',
                 `${dadataCompany.name}${result.offer.price ? ` — ${result.offer.price.toLocaleString('ru-RU')} ₽` : ''}`,
                 result.offer.terms ?? null,

@@ -67,8 +67,8 @@ export function B2BOfferPage() {
 
       {request && (
         <div className="program-card">
-          <h3 className="program-card__title">{request.title}</h3>
-          <p className="program-card__desc">{request.item}</p>
+          <h3 className="program-card__title">{request.item}</h3>
+          {request.notes && <p className="program-card__desc">{request.notes}</p>}
         </div>
       )}
 

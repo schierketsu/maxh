@@ -8,29 +8,23 @@ const DATA_PATH = resolve(__dirname, '../data/b2b.json')
 
 const DEMO_REQUESTS = [
   {
-    title: 'Ресторан ищет поставщика кофе',
     item: 'зерновой кофе, поставка ежемесячно',
     qty: null,
-    region: 'Москва',
     deadline: null,
     budget: 180_000,
     notes: 'бюджет указан в месяц',
   },
   {
-    title: 'Нужна упаковка для доставки',
     item: 'бумажная упаковка с логотипом',
-    qty: 3000,
-    region: 'Москва',
-    deadline: null,
+    qty: '3000 шт',
+    deadline: '2026-10-01',
     budget: null,
     notes: null,
   },
   {
-    title: 'Ищем подрядчика на корпоративный кейтеринг',
     item: 'кейтеринг на 50 человек',
-    qty: 50,
-    region: 'Москва',
-    deadline: null,
+    qty: '50 человек',
+    deadline: '2026-10-20',
     budget: 250_000,
     notes: 'разовое мероприятие',
   },
@@ -115,7 +109,7 @@ export function linkUser(inn, userId, chatId) {
   return upsertCompany(inn, { userId, chatId })
 }
 
-export function createRequest({ requesterInn, requesterName, title, item, qty, region, deadline, budget, notes, rawText, direction }) {
+export function createRequest({ requesterInn, requesterName, item, qty, deadline, budget, notes, rawText, direction }) {
   const request = {
     id: randomUUID(),
     requesterInn,
@@ -123,10 +117,8 @@ export function createRequest({ requesterInn, requesterName, title, item, qty, r
     isDemo: false,
     status: 'active',
     direction: direction === 'supply' ? 'supply' : 'demand',
-    title,
     item,
     qty: qty ?? null,
-    region: region ?? null,
     deadline: deadline ?? null,
     budget: budget ?? null,
     notes: notes ?? null,

@@ -3,7 +3,11 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { Button } from '@maxhub/max-ui'
 import { useCompany } from '../context/CompanyContext'
 import { deleteRequest, fetchMyRequests, setRequestStatus } from '../lib/b2bApi'
+import { getContactedRequests, removeContactedRequest, type ContactedRequest } from '../lib/contactedRequests'
+import { formatMoney } from '../lib/matching'
 import type { B2BRequestWithOffers } from '../types'
+import closeIcon from '../assets/icon_close.png'
+import pauseIcon from '../assets/icon_pause.png'
 
 function offersWord(n: number) {
   const mod100 = n % 100
@@ -14,10 +18,23 @@ function offersWord(n: number) {
   return 'предложений'
 }
 
+function toggleInSet(set: Set<string>, id: string): Set<string> {
+  const next = new Set(set)
+  if (next.has(id)) {
+    next.delete(id)
+  } else {
+    next.add(id)
+  }
+  return next
+}
+
 export function B2BMyRequestsPage() {
   const { company } = useCompany()
   const navigate = useNavigate()
   const [requests, setRequests] = useState<B2BRequestWithOffers[] | null>(null)
+  const [contacted, setContacted] = useState<ContactedRequest[]>([])
+  const [expandedRequests, setExpandedRequests] = useState<Set<string>>(new Set())
+  const [expandedContacted, setExpandedContacted] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!company) return
@@ -25,6 +42,14 @@ export function B2BMyRequestsPage() {
       .then(setRequests)
       .catch(() => setRequests([]))
   }, [company])
+
+  useEffect(() => {
+    setContacted(getContactedRequests())
+  }, [])
+
+  const handleRemoveContacted = (id: string) => {
+    setContacted(removeContactedRequest(id))
+  }
 
   if (!company) {
     return <Navigate to="/b2b" replace />
@@ -69,43 +94,129 @@ export function B2BMyRequestsPage() {
           requests.map((request) => {
             const hasOffers = request.offers.length > 0
             const isActive = request.status === 'active'
+            const isExpanded = expandedRequests.has(request.id)
             return (
-              <div
-                className={`requests-table__row${isActive ? '' : ' is-inactive'}`}
-                key={request.id}
-              >
-                <span
-                  className={`requests-table__dot${hasOffers && isActive ? ' is-active' : ''}`}
-                  aria-hidden="true"
-                />
-                <span className={`requests-table__direction requests-table__direction--${request.direction}`}>
-                  {request.direction === 'supply' ? 'даю' : 'ищу'}
-                </span>
-                <span className="requests-table__title">{request.title}</span>
-                <span className={`requests-table__status${hasOffers && isActive ? ' is-active' : ''}`}>
-                  {!isActive ? 'неактивна' : hasOffers ? `${request.offers.length} ${offersWord(request.offers.length)}` : 'ожидает'}
-                </span>
-                <button
-                  type="button"
-                  className="requests-table__action"
-                  aria-label={isActive ? 'Деактивировать' : 'Активировать'}
-                  onClick={() => toggleStatus(request)}
+              <div className="requests-table__item" key={request.id}>
+                <div
+                  className={`requests-table__row${isActive ? '' : ' is-inactive'}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setExpandedRequests((prev) => toggleInSet(prev, request.id))}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      setExpandedRequests((prev) => toggleInSet(prev, request.id))
+                    }
+                  }}
                 >
-                  {isActive ? '⏸' : '▶'}
-                </button>
-                <button
-                  type="button"
-                  className="requests-table__action requests-table__action--danger"
-                  aria-label="Удалить"
-                  onClick={() => handleDelete(request.id)}
-                >
-                  ✕
-                </button>
+                  <span className={`requests-table__direction requests-table__direction--${request.direction}`}>
+                    {request.direction === 'supply' ? 'даю' : 'ищу'}
+                  </span>
+                  <span className="requests-table__title">{request.item}</span>
+                  <span className={`requests-table__status${hasOffers && isActive ? ' is-active' : ''}`}>
+                    {!isActive ? 'неактивна' : hasOffers ? `${request.offers.length} ${offersWord(request.offers.length)}` : 'ожидает'}
+                  </span>
+                  <button
+                    type="button"
+                    className={`requests-table__action${isActive ? ' requests-table__action--pause' : ''}`}
+                    aria-label={isActive ? 'Деактивировать' : 'Активировать'}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      toggleStatus(request)
+                    }}
+                  >
+                    {isActive ? (
+                      <img className="requests-table__action-icon" src={pauseIcon} alt="" />
+                    ) : (
+                      '▶'
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    className="requests-table__action requests-table__action--danger"
+                    aria-label="Удалить"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      handleDelete(request.id)
+                    }}
+                  >
+                    <img className="requests-table__action-icon" src={closeIcon} alt="" />
+                  </button>
+                </div>
+
+                {isExpanded && (
+                  <div className="requests-table__details">
+                    {request.qty && <p><b>Количество:</b> {request.qty}</p>}
+                    {request.deadline && <p><b>Срок:</b> {request.deadline}</p>}
+                    {request.budget != null && <p><b>Бюджет:</b> {formatMoney(request.budget)}</p>}
+                    {request.notes && <p>{request.notes}</p>}
+                    {hasOffers && (
+                      <div className="requests-table__offers">
+                        {request.offers.map((offer) => (
+                          <div className="requests-table__offer" key={offer.id}>
+                            <span className="requests-table__offer-name">{offer.supplierName}</span>
+                            {offer.price != null && <span>{formatMoney(offer.price)}</span>}
+                            {offer.terms && <span>{offer.terms}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )
           })
         )}
       </div>
+
+      {contacted.length > 0 && (
+        <section className="section-head">
+          <h2>вы связывались:</h2>
+        </section>
+      )}
+      {contacted.length > 0 && (
+        <div className="requests-table">
+          {contacted.map((item) => {
+            const isExpanded = expandedContacted.has(item.id)
+            return (
+              <div className="requests-table__item" key={item.id}>
+                <div
+                  className="requests-table__row"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setExpandedContacted((prev) => toggleInSet(prev, item.id))}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      setExpandedContacted((prev) => toggleInSet(prev, item.id))
+                    }
+                  }}
+                >
+                  <span className="requests-table__title">{item.name}</span>
+                  <button
+                    type="button"
+                    className="requests-table__action requests-table__action--danger"
+                    aria-label="Убрать"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      handleRemoveContacted(item.id)
+                    }}
+                  >
+                    <img className="requests-table__action-icon" src={closeIcon} alt="" />
+                  </button>
+                </div>
+
+                {isExpanded && (
+                  <div className="requests-table__details">
+                    <p>{item.need}</p>
+                    {item.deadline && <p><b>Срок:</b> {item.deadline}</p>}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
