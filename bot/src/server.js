@@ -159,12 +159,12 @@ export function startServer(port = process.env.PORT ?? 3001) {
 
     if (req.method === 'POST' && pathname === '/api/b2b/requests/parse') {
       try {
-        const { text } = await readJsonBody(req)
+        const { text, direction } = await readJsonBody(req)
         if (!text?.trim()) {
           sendJson(res, 400, { error: 'Нужен text' })
           return
         }
-        const parsed = await extractRequest(text.trim())
+        const parsed = await extractRequest(text.trim(), direction === 'supply' ? 'supply' : 'demand')
         sendJson(res, 200, { parsed })
       } catch (error) {
         console.error('Parse request failed:', error.message)
@@ -175,7 +175,7 @@ export function startServer(port = process.env.PORT ?? 3001) {
 
     if (req.method === 'POST' && pathname === '/api/b2b/requests') {
       try {
-        const { inn, title, item, qty, region, deadline, budget, notes, rawText } = await readJsonBody(req)
+        const { inn, title, item, qty, region, deadline, budget, notes, rawText, direction } = await readJsonBody(req)
         const cleanedInn = String(inn ?? '').replace(/\D/g, '')
         if (!cleanedInn || !title?.trim() || !item?.trim()) {
           sendJson(res, 400, { error: 'Нужны inn, title и item' })
@@ -205,6 +205,7 @@ export function startServer(port = process.env.PORT ?? 3001) {
           budget: budget ?? null,
           notes: notes ?? null,
           rawText: rawText ?? null,
+          direction,
         })
 
         const notified = await notifyMatches(request, requesterCompany)

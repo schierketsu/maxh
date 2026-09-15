@@ -78,6 +78,9 @@ export function B2BMyRequestsPage() {
                   className={`requests-table__dot${hasOffers && isActive ? ' is-active' : ''}`}
                   aria-hidden="true"
                 />
+                <span className={`requests-table__direction requests-table__direction--${request.direction}`}>
+                  {request.direction === 'supply' ? 'даю' : 'ищу'}
+                </span>
                 <span className="requests-table__title">{request.title}</span>
                 <span className={`requests-table__status${hasOffers && isActive ? ' is-active' : ''}`}>
                   {!isActive ? 'неактивна' : hasOffers ? `${request.offers.length} ${offersWord(request.offers.length)}` : 'ожидает'}

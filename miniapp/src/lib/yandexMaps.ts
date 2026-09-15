@@ -4,6 +4,7 @@ const API_KEY = 'PASTE_YANDEX_MAPS_API_KEY'
 interface YMapInstance {
   addChild: (child: unknown) => void
   destroy: () => void
+  setLocation: (location: Record<string, unknown>) => Promise<void>
 }
 
 interface Ymaps3Namespace {

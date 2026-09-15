@@ -24,7 +24,7 @@ export function ChooseModePage() {
         <span className="notice-tile__caption">
           Государственные
           <br />
-          субсидии
+          <span className="notice-tile__caption-big">субсидии</span>
         </span>
       </button>
 

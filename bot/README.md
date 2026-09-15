@@ -14,11 +14,11 @@
 export DADATA_API_KEY=ваш_ключ   # PowerShell: $env:DADATA_API_KEY = "..."
 ```
 
-Для разбора B2B-заявок свободным текстом нужен ключ Anthropic API
-(console.anthropic.com):
+Для разбора B2B-заявок свободным текстом нужен ключ Cloud.ru Foundation Models
+(foundation-models.api.cloud.ru, модель `ai-sage/GigaChat3-10B-A1.8B`):
 
 ```bash
-export ANTHROPIC_API_KEY=ваш_ключ
+export CLOUDRU_API_KEY=ваш_ключ
 ```
 
 Без него сама компания и господдержка продолжат работать — упадёт только

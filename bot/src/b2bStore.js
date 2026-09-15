@@ -46,6 +46,7 @@ function seedData() {
       requesterName: 'Демо-компания',
       isDemo: true,
       status: 'active',
+      direction: 'demand',
       rawText: null,
       createdAt: now,
       ...req,
@@ -54,10 +55,11 @@ function seedData() {
   }
 }
 
-/** Заявки, сохранённые до появления поля status, по умолчанию считаются активными. */
+/** Заявки, сохранённые до появления полей status/direction, получают значения по умолчанию. */
 function migrate(loaded) {
   for (const request of loaded.requests) {
     request.status ??= 'active'
+    request.direction ??= 'demand'
   }
   return loaded
 }
@@ -113,13 +115,14 @@ export function linkUser(inn, userId, chatId) {
   return upsertCompany(inn, { userId, chatId })
 }
 
-export function createRequest({ requesterInn, requesterName, title, item, qty, region, deadline, budget, notes, rawText }) {
+export function createRequest({ requesterInn, requesterName, title, item, qty, region, deadline, budget, notes, rawText, direction }) {
   const request = {
     id: randomUUID(),
     requesterInn,
     requesterName,
     isDemo: false,
     status: 'active',
+    direction: direction === 'supply' ? 'supply' : 'demand',
     title,
     item,
     qty: qty ?? null,

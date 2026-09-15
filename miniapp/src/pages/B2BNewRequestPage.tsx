@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { Button } from '@maxhub/max-ui'
 import { useCompany } from '../context/CompanyContext'
 import { createRequest, parseRequestText } from '../lib/b2bApi'
-import type { ParsedB2BRequest } from '../types'
+import type { B2BRequestDirection, ParsedB2BRequest } from '../types'
 
 type Step = 'input' | 'confirm' | 'done'
 
@@ -11,6 +11,7 @@ export function B2BNewRequestPage() {
   const { company } = useCompany()
   const navigate = useNavigate()
   const [step, setStep] = useState<Step>('input')
+  const [direction, setDirection] = useState<B2BRequestDirection>('demand')
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -24,13 +25,13 @@ export function B2BNewRequestPage() {
   const parse = async (event: FormEvent) => {
     event.preventDefault()
     if (!text.trim()) {
-      setError('Опишите, что вам нужно')
+      setError(direction === 'demand' ? 'Опишите, что вам нужно' : 'Опишите, что вы можете поставить')
       return
     }
     setLoading(true)
     setError(null)
     try {
-      const parsed = await parseRequestText(text.trim())
+      const parsed = await parseRequestText(text.trim(), direction)
       setFields(parsed)
       setStep('confirm')
     } catch {
@@ -49,7 +50,7 @@ export function B2BNewRequestPage() {
     setLoading(true)
     setError(null)
     try {
-      const result = await createRequest(company.inn, fields, text.trim())
+      const result = await createRequest(company.inn, fields, text.trim(), direction)
       setNotified(result.notified)
       setStep('done')
     } catch {
@@ -183,10 +184,31 @@ export function B2BNewRequestPage() {
         отменить
       </Button>
 
+      <div className="b2b-direction-toggle" role="group" aria-label="Тип заявки">
+        <button
+          type="button"
+          className={`b2b-direction-toggle__option${direction === 'demand' ? ' is-active' : ''}`}
+          onClick={() => setDirection('demand')}
+        >
+          мне нужно
+        </button>
+        <button
+          type="button"
+          className={`b2b-direction-toggle__option${direction === 'supply' ? ' is-active' : ''}`}
+          onClick={() => setDirection('supply')}
+        >
+          я даю
+        </button>
+      </div>
+
       <form className="b2b-request-form" onSubmit={parse}>
         <textarea
-          className={`b2b-textarea b2b-textarea--main${error ? ' inn-input--invalid' : ''}`}
-          placeholder="например: нужно 20 литров молока до завтра"
+          className={`b2b-textarea b2b-textarea--main b2b-textarea--${direction}${error ? ' inn-input--invalid' : ''}`}
+          placeholder={
+            direction === 'demand'
+              ? 'например: нужно 20 литров молока до завтра'
+              : 'например: есть 20 литров молока в наличии, готовы поставлять еженедельно'
+          }
           value={text}
           onChange={(event) => {
             setText(event.target.value)

@@ -506,7 +506,7 @@ button, input, select, textarea { font: inherit; }
   position: fixed;
   left: clamp(16px, 4vw, 24px);
   right: clamp(16px, 4vw, 24px);
-  bottom: calc(var(--home-toolbar-space) + 12px);
+  bottom: calc(var(--home-toolbar-space) + 20px);
   z-index: 45;
   padding: 16px 44px 20px 16px;
   border-radius: 16px;
@@ -531,9 +531,22 @@ button, input, select, textarea { font: inherit; }
 }
 .map-popup__name { margin: 0 0 4px; color: var(--ink); font-size: 1rem; font-weight: 700; }
 .map-popup__need { margin: 0; color: var(--ink-soft); font-size: 1rem; font-weight: 400; line-height: 1.4; }
-.map-popup__deadline { margin: 8px 0 0; color: var(--ink-soft); font-size: 1rem; font-weight: 400; line-height: 1.4; }
-.map-popup__footer { display: flex; margin-top: 12px; }
-.map-popup__cta { margin-top: 0; }
+.map-popup__footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; margin-right: -34px; }
+.map-popup__deadline { margin: 0; color: var(--ink-soft); font-size: 1rem; font-weight: 400; line-height: 1.4; }
+.map-popup__cta {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--palette-lime);
+  cursor: pointer;
+}
+.map-popup__cta:active { background: var(--yellow); }
+.map-popup__cta-icon { width: 20px; height: 20px; }
 
 .notice-tile {
   display: flex;
@@ -562,9 +575,10 @@ button, input, select, textarea { font: inherit; }
   font-family: 'Monomakh', var(--family-brand);
   font-size: clamp(30px, 9vw, 40px);
   font-weight: 400;
-  line-height: 1.08;
+  line-height: 0.9;
   text-align: left;
 }
+.notice-tile__caption-big { font-size: 1.35em; }
 
 .home-toolbar {
   position: fixed;
@@ -741,6 +755,8 @@ button, input, select, textarea { font: inherit; }
 .b2b-textarea::placeholder { color: var(--ink-soft); }
 .b2b-textarea:focus { outline: none; box-shadow: 0 0 0 2px var(--blue); }
 .b2b-textarea--main { height: 40vh; resize: none; }
+.b2b-textarea--demand { border-top-left-radius: 0; }
+.b2b-textarea--supply { border-top-right-radius: 0; }
 
 .b2b-field { display: flex; flex-direction: column; gap: 6px; }
 .b2b-field__label { color: var(--ink-soft); font-size: 13px; font-weight: 500; }
@@ -762,7 +778,30 @@ button, input, select, textarea { font: inherit; }
 
 .b2b-parse-cta,
 .b2b-parse-cta:hover,
-.b2b-parse-cta:active { background: var(--palette-blue); }
+.b2b-parse-cta:active { width: 100%; background: var(--palette-blue); }
+
+.b2b-direction-toggle {
+  display: flex;
+  width: 100%;
+  gap: 4px;
+  padding: 4px 0 0;
+  border-radius: 14px 14px 0 0;
+  background: var(--sky);
+  margin-bottom: -22px;
+}
+.b2b-direction-toggle__option {
+  flex: 1;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 10px 10px 0 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.b2b-direction-toggle__option.is-active { background: #fff; color: var(--ink); }
 
 .b2b-offer-form { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
 .b2b-offer-cta { width: 100%; margin-top: 12px; }
@@ -786,6 +825,18 @@ button, input, select, textarea { font: inherit; }
 .requests-table__row--empty { justify-content: center; padding: 32px 16px; color: var(--ink-soft); font-size: 1rem; }
 .requests-table__dot { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: #c7c7cc; }
 .requests-table__dot.is-active { background: var(--green); }
+.requests-table__direction {
+  flex: 0 0 auto;
+  padding: 3px 9px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}
+.requests-table__direction--demand { background: var(--palette-blue); }
+.requests-table__direction--supply { background: var(--palette-lime); }
 .requests-table__title {
   flex: 1;
   min-width: 0;
@@ -902,4 +953,5 @@ button, input, select, textarea { font: inherit; }
   .page { gap: 26px; }
   .inn-row { flex-direction: row; align-items: flex-start; }
   .inn-row button { width: auto; }
+  .b2b-direction-toggle { margin-bottom: -26px; }
 }

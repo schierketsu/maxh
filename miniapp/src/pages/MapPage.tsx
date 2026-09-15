@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { Button } from '@maxhub/max-ui'
 import { useCompany } from '../context/CompanyContext'
 import { fetchCompanyDetails } from '../lib/companyApi'
 import { loadYandexMaps, type YMapInstance } from '../lib/yandexMaps'
 import mapCustomization from '../assets/customization.json'
+import contactIcon from '../assets/icon_contact.png'
 
 type Status = 'loading' | 'ready' | 'no-location' | 'error'
 
@@ -75,7 +75,15 @@ export function MapPage() {
           const fakeMarkerEl = document.createElement('div')
           fakeMarkerEl.className = 'map-marker map-marker--blue'
           fakeMarkerEl.title = `${item.name} — ${item.need}`
-          fakeMarkerEl.addEventListener('click', () => setSelected(item))
+          fakeMarkerEl.addEventListener('click', () => {
+            setSelected(item)
+            map?.setLocation({
+              center: [item.lon, item.lat],
+              zoom: 16,
+              duration: 600,
+              easing: 'ease-in-out',
+            })
+          })
           map.addChild(
             new ymaps3.YMapMarker({ coordinates: [item.lon, item.lat] }, fakeMarkerEl),
           )
@@ -120,11 +128,11 @@ export function MapPage() {
           </button>
           <p className="map-popup__name">{selected.name}</p>
           <p className="map-popup__need">{selected.need}</p>
-          <p className="map-popup__deadline">{selected.deadline}</p>
           <div className="map-popup__footer">
-            <Button type="button" className="b2b-parse-cta map-popup__cta">
-              связаться
-            </Button>
+            <p className="map-popup__deadline">{selected.deadline}</p>
+            <button type="button" className="map-popup__cta" aria-label="Связаться">
+              <img className="map-popup__cta-icon" src={contactIcon} alt="" />
+            </button>
           </div>
         </div>
       )}

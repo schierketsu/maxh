@@ -1,0 +1,123 @@
+{
+  "companies": {
+    "1653001805": {
+      "name": "ПАО \"АК БАРС\" БАНК",
+      "region": "Респ Татарстан",
+      "industry": "Не указана",
+      "okved": [
+        "64.19"
+      ],
+      "inn": "1653001805",
+      "updatedAt": "2026-09-08T09:00:24.346Z",
+      "userId": 71073261,
+      "chatId": 73428264
+    },
+    "7707083893": {
+      "name": "ПАО СБЕРБАНК",
+      "region": "г Москва",
+      "industry": "Не указана",
+      "okved": [
+        "64.19"
+      ],
+      "inn": "7707083893",
+      "updatedAt": "2026-09-08T14:04:08.865Z",
+      "userId": 71073261,
+      "chatId": 73428264
+    },
+    "500100732259": {
+      "name": "ИП Мясина Елена Анатольевна",
+      "region": "Московская обл",
+      "industry": "Не указана",
+      "okved": [
+        "69.20.2"
+      ],
+      "inn": "500100732259",
+      "updatedAt": "2026-09-08T09:00:30.700Z",
+      "userId": 71073261,
+      "chatId": 73428264
+    },
+    "7724351831": {
+      "name": "ООО \"ТОРТЫ МОСКВА\"",
+      "region": "г Москва",
+      "industry": "Не указана",
+      "okved": [
+        "56.10"
+      ],
+      "inn": "7724351831",
+      "updatedAt": "2026-09-15T11:50:44.325Z"
+    }
+  },
+  "requests": [
+    {
+      "id": "f5cec142-8af0-42e5-b39b-0d0ba17717f6",
+      "requesterInn": null,
+      "requesterName": "Демо-компания",
+      "isDemo": true,
+      "rawText": null,
+      "createdAt": "2026-09-07T16:52:00.141Z",
+      "title": "Ресторан ищет поставщика кофе",
+      "item": "зерновой кофе, поставка ежемесячно",
+      "qty": null,
+      "region": "Москва",
+      "deadline": null,
+      "budget": 180000,
+      "notes": "бюджет указан в месяц",
+      "status": "active",
+      "direction": "demand"
+    },
+    {
+      "id": "7d2083e6-c9f5-40a9-88c7-94a3a4ef843c",
+      "requesterInn": null,
+      "requesterName": "Демо-компания",
+      "isDemo": true,
+      "rawText": null,
+      "createdAt": "2026-09-07T16:52:00.141Z",
+      "title": "Нужна упаковка для доставки",
+      "item": "бумажная упаковка с логотипом",
+      "qty": 3000,
+      "region": "Москва",
+      "deadline": null,
+      "budget": null,
+      "notes": null,
+      "status": "active",
+      "direction": "demand"
+    },
+    {
+      "id": "c0f28810-6452-401d-8803-fd77ffa7cd5f",
+      "requesterInn": null,
+      "requesterName": "Демо-компания",
+      "isDemo": true,
+      "rawText": null,
+      "createdAt": "2026-09-07T16:52:00.141Z",
+      "title": "Ищем подрядчика на корпоративный кейтеринг",
+      "item": "кейтеринг на 50 человек",
+      "qty": 50,
+      "region": "Москва",
+      "deadline": null,
+      "budget": 250000,
+      "notes": "разовое мероприятие",
+      "status": "active",
+      "direction": "demand"
+    }
+  ],
+  "offers": [
+    {
+      "id": "937f379b-d17e-428e-b3d8-49130cb48392",
+      "requestId": "f5cec142-8af0-42e5-b39b-0d0ba17717f6",
+      "supplierInn": "7707083893",
+      "supplierName": "ПАО СБЕРБАНК",
+      "price": 150000,
+      "terms": "�������� �� 5 ����",
+      "createdAt": "2026-09-07T16:52:40.250Z"
+    },
+    {
+      "id": "c855283d-5d40-4f89-b540-8f4d3f572899",
+      "requestId": "f5cec142-8af0-42e5-b39b-0d0ba17717f6",
+      "supplierInn": "7707083893",
+      "supplierName": "ПАО СБЕРБАНК",
+      "price": 99000,
+      "terms": "поставка за 5 дней, кофе премиум",
+      "createdAt": "2026-09-07T16:53:04.003Z"
+    }
+  ]
+}

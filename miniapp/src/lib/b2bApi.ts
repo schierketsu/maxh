@@ -1,4 +1,11 @@
-import type { B2BOffer, B2BRequest, B2BRequestStatus, B2BRequestWithOffers, ParsedB2BRequest } from '../types'
+import type {
+  B2BOffer,
+  B2BRequest,
+  B2BRequestDirection,
+  B2BRequestStatus,
+  B2BRequestWithOffers,
+  ParsedB2BRequest,
+} from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 
@@ -28,11 +35,14 @@ export async function fetchRequest(id: string): Promise<B2BRequest> {
   return data.request
 }
 
-export async function parseRequestText(text: string): Promise<ParsedB2BRequest> {
+export async function parseRequestText(
+  text: string,
+  direction: B2BRequestDirection,
+): Promise<ParsedB2BRequest> {
   const res = await fetch(`${API_BASE}/api/b2b/requests/parse`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, direction }),
   })
   const data = await handle<{ parsed: ParsedB2BRequest }>(res)
   return data.parsed
@@ -42,11 +52,12 @@ export async function createRequest(
   inn: string,
   fields: ParsedB2BRequest,
   rawText: string | null,
+  direction: B2BRequestDirection,
 ): Promise<{ request: B2BRequest; notified: number }> {
   const res = await fetch(`${API_BASE}/api/b2b/requests`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ inn, ...fields, rawText }),
+    body: JSON.stringify({ inn, ...fields, rawText, direction }),
   })
   return handle(res)
 }

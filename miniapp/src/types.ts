@@ -55,6 +55,7 @@ export interface MatchedProgram {
 }
 
 export type B2BRequestStatus = 'active' | 'inactive'
+export type B2BRequestDirection = 'demand' | 'supply'
 
 export interface B2BRequest {
   id: string
@@ -62,6 +63,7 @@ export interface B2BRequest {
   requesterName: string
   isDemo: boolean
   status: B2BRequestStatus
+  direction: B2BRequestDirection
   title: string
   item: string
   qty: number | null
