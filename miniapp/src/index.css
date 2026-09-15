@@ -419,9 +419,7 @@ button, input, select, textarea { font: inherit; }
   text-shadow: 0 1px 6px rgba(0, 0, 0, .35);
   cursor: pointer;
 }
-.company-details__quick-tile--reviews {
-  background: var(--palette-blue) url('./assets/icon_rewies.png') center / cover no-repeat;
-}
+.company-details__quick-tile--reviews { background: var(--palette-blue); }
 .company-details__quick-tile--requests { background: var(--palette-red); }
 .company-details__quick-tile-placeholder {
   position: absolute;

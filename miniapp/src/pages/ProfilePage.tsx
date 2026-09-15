@@ -135,6 +135,7 @@ export function ProfilePage() {
                 className="company-details__quick-tile company-details__quick-tile--reviews"
                 onClick={() => setShowAllReviews(true)}
               >
+                <span className="company-details__quick-tile-placeholder">?</span>
                 отзывы
               </button>
             )}
