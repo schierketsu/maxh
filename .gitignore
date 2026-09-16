@@ -1,4 +1,6 @@
 node_modules
 dist
 miniapp/dist
+bot/.env
+in_help/llm.md
 
