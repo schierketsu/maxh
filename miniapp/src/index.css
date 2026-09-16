@@ -179,7 +179,7 @@ button, input, select, textarea { font: inherit; }
      через Госуслуги" (.gosuslugi-bar). */
   padding-right: clamp(2px, .5vw, 4px);
 }
-.mode-select-brand {
+.mode-select-brand-wrap {
   /* По центру экрана целиком (а не только тайла) — не завязано на поток
      .mode-select-tile__text, остальные элементы колонки не сдвигаются. */
   position: fixed;
@@ -187,6 +187,12 @@ button, input, select, textarea { font: inherit; }
   left: 50%;
   z-index: 5;
   transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.mode-select-brand {
   margin: 0;
   color: #fff;
   font-family: 'Styrene A LC', var(--family-brand);
@@ -194,8 +200,97 @@ button, input, select, textarea { font: inherit; }
   font-weight: 900;
   font-style: normal;
   line-height: 1;
-  text-align: center;
 }
+.mode-select-slogan {
+  margin: 6px 0 0;
+  color: rgb(255 255 255 / 85%);
+  font-family: 'Styrene A LC', var(--family-brand);
+  font-size: clamp(14px, 4vw, 18px);
+  font-weight: 600;
+  font-style: normal;
+  line-height: 1.3;
+}
+.account-switcher {
+  position: fixed;
+  top: calc(18px + env(safe-area-inset-top));
+  right: clamp(16px, 4vw, 24px);
+  z-index: 60;
+}
+.account-switcher__trigger {
+  display: flex;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+.account-switcher__trigger--text {
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 14px;
+  line-height: 1;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-size: clamp(14px, 4vw, 18px);
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 12%);
+}
+.account-switcher__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: default;
+}
+.account-switcher__menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 60;
+  width: max-content;
+  min-width: 200px;
+  padding: 10px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 18%);
+}
+.account-switcher__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.account-switcher__item.is-active { background: #f2f2f7; }
+.account-switcher__item-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-avatar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+.account-avatar__icon { width: 22px; height: 22px; object-fit: contain; }
+.account-avatar__icon--coffee { width: 25px; height: 25px; }
+
 .mode-select-tagcloud {
   position: fixed;
   inset: 0;
@@ -302,10 +397,31 @@ button, input, select, textarea { font: inherit; }
   right: 0;
   bottom: 0;
   z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   max-width: 600px;
   margin: 0 auto;
   padding: 16px clamp(16px, 4vw, 24px) calc(26px + env(safe-area-inset-bottom));
   background: #f2f2f7;
+}
+.top-notice {
+  position: fixed;
+  top: env(safe-area-inset-top);
+  left: 50%;
+  z-index: 200;
+  transform: translateX(-50%);
+  margin-top: 10px;
+  max-width: calc(100% - 32px);
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 25%);
 }
 /* Панель на экране авторизации не должна перекрывать облако тегов позади
    неё — убираем её собственный фон (сама кнопка "Госуслуги" при этом
@@ -331,10 +447,11 @@ button, input, select, textarea { font: inherit; }
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 15px;
+  font-size: clamp(14px, 4vw, 18px);
   font-weight: 600;
   color: var(--ink);
 }
+.gosuslugi-cta__label-text { font-size: clamp(16px, 4.5vw, 20px); }
 .gosuslugi-cta__logo { height: 22px; width: auto; }
 
 .company-details {
@@ -360,6 +477,25 @@ button, input, select, textarea { font: inherit; }
   color: var(--ink);
   font-size: 15px;
   cursor: pointer;
+}
+.company-details__logout {
+  position: fixed;
+  top: calc(18px + env(safe-area-inset-top));
+  right: clamp(16px, 4vw, 24px);
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 18px;
+  background: #fff;
+  color: var(--ink);
+  font-size: clamp(14px, 4vw, 18px);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 12%);
 }
 .company-details__content {
   max-width: 600px;
@@ -393,6 +529,7 @@ button, input, select, textarea { font: inherit; }
   background: var(--palette-red);
 }
 .company-details__avatar-icon { width: 60px; height: 60px; object-fit: contain; }
+.company-details__avatar-icon--coffee { width: 68px; height: 68px; }
 .company-details__profile-body { display: flex; flex-direction: column; align-self: stretch; gap: 2px; }
 .company-details__name {
   flex: 1;
@@ -457,8 +594,8 @@ button, input, select, textarea { font: inherit; }
   text-shadow: 0 1px 6px rgba(0, 0, 0, .35);
   cursor: pointer;
 }
-.company-details__quick-tile--reviews { background: var(--palette-blue); }
-.company-details__quick-tile--requests { background: var(--palette-red); }
+.company-details__quick-tile--reviews { background: #2a81fd; }
+.company-details__quick-tile--requests { background: #f43021; }
 .company-details__quick-tile-placeholder {
   position: absolute;
   top: 50%;
@@ -467,6 +604,16 @@ button, input, select, textarea { font: inherit; }
   font-size: 40px;
   font-weight: 700;
 }
+.company-details__quick-tile-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 124px;
+  height: 124px;
+  object-fit: contain;
+}
+.company-details__quick-tile-icon--requests { width: 100px; height: 100px; }
 
 .company-reviews-list {
   position: fixed;
@@ -583,6 +730,7 @@ button, input, select, textarea { font: inherit; }
   transform: translate(-50%, -50%);
 }
 .map-marker--blue { background: var(--palette-blue); cursor: pointer; }
+.map-marker--green { background: var(--palette-lime); cursor: pointer; }
 
 .map-popup {
   position: fixed;
@@ -611,7 +759,8 @@ button, input, select, textarea { font: inherit; }
   font-size: 15px;
   cursor: pointer;
 }
-.map-popup__name { margin: 0 0 4px; color: var(--ink); font-size: 1rem; font-weight: 700; }
+.map-popup__name-row { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; }
+.map-popup__name { margin: 0; color: var(--ink); font-size: 1rem; font-weight: 700; }
 .map-popup__need { margin: 0; color: var(--ink-soft); font-size: 1rem; font-weight: 400; line-height: 1.4; }
 .map-popup__footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; margin-right: -34px; }
 .map-popup__deadline { margin: 0; color: var(--ink-soft); font-size: 1rem; font-weight: 400; line-height: 1.4; }
@@ -620,17 +769,20 @@ button, input, select, textarea { font: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
+  min-width: 64px;
   height: 40px;
+  padding: 0 18px;
   border: 0;
   border-radius: 999px;
   background: var(--palette-lime);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
 }
 .map-popup__cta:active { background: var(--yellow); }
 .map-popup__cta.is-contacted { background: var(--orange); }
-.map-popup__cta-icon { width: 20px; height: 20px; }
-.map-popup__cta-icon.is-flipped { transform: scaleX(-1); }
 
 .notice-tile {
   display: flex;
@@ -641,9 +793,9 @@ button, input, select, textarea { font: inherit; }
   padding: 48px 20px;
   border-radius: 24px;
   background: #fff;
-  color: var(--ink-soft);
-  font-size: 1rem;
-  font-weight: 400;
+  color: var(--ink);
+  font-size: clamp(14px, 4vw, 18px);
+  font-weight: 600;
   text-align: center;
 }
 .notice-tile--fill { flex: 1 1 0; }

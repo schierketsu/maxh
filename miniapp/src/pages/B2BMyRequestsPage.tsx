@@ -5,6 +5,7 @@ import { useCompany } from '../context/CompanyContext'
 import { deleteRequest, fetchMyRequests, setRequestStatus } from '../lib/b2bApi'
 import { getContactedRequests, removeContactedRequest, type ContactedRequest } from '../lib/contactedRequests'
 import { formatMoney } from '../lib/matching'
+import { brandCompanyName } from '../lib/demoBranding'
 import type { B2BRequestWithOffers } from '../types'
 import closeIcon from '../assets/icons/icon_close.png'
 import pauseIcon from '../assets/icons/icon_pause.png'
@@ -45,11 +46,12 @@ export function B2BMyRequestsPage() {
   }, [company])
 
   useEffect(() => {
-    setContacted(getContactedRequests())
-  }, [])
+    setContacted(company ? getContactedRequests(company.inn) : [])
+  }, [company])
 
   const handleRemoveContacted = (id: string) => {
-    setContacted(removeContactedRequest(id))
+    if (!company) return
+    setContacted(removeContactedRequest(company.inn, id))
   }
 
   if (!company) {
@@ -155,7 +157,9 @@ export function B2BMyRequestsPage() {
                       <div className="requests-table__offers">
                         {request.offers.map((offer) => (
                           <div className="requests-table__offer" key={offer.id}>
-                            <span className="requests-table__offer-name">{offer.supplierName}</span>
+                            <span className="requests-table__offer-name">
+                              {brandCompanyName(offer.supplierInn, offer.supplierName)}
+                            </span>
                             {offer.price != null && <span>{formatMoney(offer.price)}</span>}
                             {offer.terms && <span>{offer.terms}</span>}
                           </div>

@@ -4,6 +4,7 @@ import { Button } from '@maxhub/max-ui'
 import { B2BOpportunityCard } from '../components/B2BOpportunityCard'
 import { useCompany } from '../context/CompanyContext'
 import { fetchOpportunities } from '../lib/b2bApi'
+import { brandCompanyName } from '../lib/demoBranding'
 import type { B2BRequest } from '../types'
 
 export function B2BHomePage() {
@@ -31,7 +32,7 @@ export function B2BHomePage() {
       </header>
 
       <header className="brand-block">
-        <h1>{company.name}</h1>
+        <h1>{brandCompanyName(company.inn, company.name)}</h1>
       </header>
       <p className="b2b-home__meta">
         {company.region} · {company.industry}

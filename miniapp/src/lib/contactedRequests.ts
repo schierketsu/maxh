@@ -5,11 +5,15 @@ export interface ContactedRequest {
   deadline: string
 }
 
-const STORAGE_KEY = 'mera.contactedRequests'
+// Список ведётся отдельно для каждой компании (ИНН) — иначе после
+// переключения демо-аккаунта было бы видно "вы связывались" чужого аккаунта.
+function storageKey(inn: string): string {
+  return `mera.contactedRequests.${inn}`
+}
 
-export function getContactedRequests(): ContactedRequest[] {
+export function getContactedRequests(inn: string): ContactedRequest[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(storageKey(inn))
     if (!raw) return []
     return JSON.parse(raw) as ContactedRequest[]
   } catch {
@@ -17,21 +21,21 @@ export function getContactedRequests(): ContactedRequest[] {
   }
 }
 
-export function addContactedRequest(item: ContactedRequest): ContactedRequest[] {
-  const withoutItem = getContactedRequests().filter((r) => r.id !== item.id)
+export function addContactedRequest(inn: string, item: ContactedRequest): ContactedRequest[] {
+  const withoutItem = getContactedRequests(inn).filter((r) => r.id !== item.id)
   const next = [item, ...withoutItem]
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    localStorage.setItem(storageKey(inn), JSON.stringify(next))
   } catch {
     // localStorage недоступен (приватный режим / квота) — список просто не сохранится
   }
   return next
 }
 
-export function removeContactedRequest(id: string): ContactedRequest[] {
-  const next = getContactedRequests().filter((r) => r.id !== id)
+export function removeContactedRequest(inn: string, id: string): ContactedRequest[] {
+  const next = getContactedRequests(inn).filter((r) => r.id !== id)
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    localStorage.setItem(storageKey(inn), JSON.stringify(next))
   } catch {
     // localStorage недоступен
   }

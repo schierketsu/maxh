@@ -1,41 +1,5 @@
 {
   "companies": {
-    "1653001805": {
-      "name": "ПАО \"АК БАРС\" БАНК",
-      "region": "Респ Татарстан",
-      "industry": "Не указана",
-      "okved": [
-        "64.19"
-      ],
-      "inn": "1653001805",
-      "updatedAt": "2026-09-08T09:00:24.346Z",
-      "userId": 71073261,
-      "chatId": 73428264
-    },
-    "7707083893": {
-      "name": "ПАО СБЕРБАНК",
-      "region": "г Москва",
-      "industry": "Не указана",
-      "okved": [
-        "64.19"
-      ],
-      "inn": "7707083893",
-      "updatedAt": "2026-09-08T14:04:08.865Z",
-      "userId": 71073261,
-      "chatId": 73428264
-    },
-    "500100732259": {
-      "name": "ИП Мясина Елена Анатольевна",
-      "region": "Московская обл",
-      "industry": "Не указана",
-      "okved": [
-        "69.20.2"
-      ],
-      "inn": "500100732259",
-      "updatedAt": "2026-09-08T09:00:30.700Z",
-      "userId": 71073261,
-      "chatId": 73428264
-    },
     "7724351831": {
       "name": "ООО \"ТОРТЫ МОСКВА\"",
       "region": "г Москва",
@@ -44,10 +8,35 @@
         "56.10"
       ],
       "inn": "7724351831",
-      "updatedAt": "2026-09-16T09:12:10.518Z"
+      "updatedAt": "2026-09-16T13:34:10.350Z"
+    },
+    "7717762862": {
+      "name": "ООО \"КОФЕЙНЯ №2\"",
+      "region": "г Москва",
+      "industry": "Не указана",
+      "okved": [
+        "56.10"
+      ],
+      "inn": "7717762862",
+      "updatedAt": "2026-09-16T13:35:38.008Z"
     }
   },
   "requests": [
+    {
+      "id": "c1e701ab-cd8c-4843-be7d-21c47894b534",
+      "requesterInn": "7717762862",
+      "requesterName": "ООО \"КОФЕЙНЯ №2\"",
+      "isDemo": false,
+      "status": "active",
+      "direction": "supply",
+      "item": "робуста, свежая обжарка",
+      "qty": "10 пачек по 2 кг",
+      "deadline": "2026-11-30",
+      "budget": null,
+      "notes": "свежая обжарка от октября",
+      "rawText": "робуста 10 пачек по 2 кг, свежая обжарка от октября, храню до 30 ноября",
+      "createdAt": "2026-09-16T12:42:20.498Z"
+    },
     {
       "id": "8fe24a9a-7ffc-42f3-ad6e-5a014299ec6f",
       "requesterInn": "7724351831",
@@ -79,66 +68,141 @@
       "createdAt": "2026-09-15T14:03:33.871Z"
     },
     {
-      "id": "f5cec142-8af0-42e5-b39b-0d0ba17717f6",
+      "id": "014624fe-2b6d-4a21-9cf8-587abfc627fa",
       "requesterInn": null,
-      "requesterName": "Демо-компания",
+      "requesterName": "Кофейня «Дом Помол»",
       "isDemo": true,
+      "status": "active",
       "rawText": null,
       "createdAt": "2026-09-07T16:52:00.141Z",
-      "item": "зерновой кофе, поставка ежемесячно",
-      "qty": null,
+      "direction": "demand",
+      "item": "зерновой кофе (арабика), поставка ежемесячно",
+      "qty": "40 кг в месяц",
       "deadline": null,
       "budget": 180000,
-      "notes": "бюджет указан в месяц",
-      "status": "active",
-      "direction": "demand"
+      "notes": "ищем обжарщика на постоянной основе, бюджет указан в месяц"
     },
     {
-      "id": "7d2083e6-c9f5-40a9-88c7-94a3a4ef843c",
+      "id": "247cf8aa-a145-4b5a-abb6-46866ecbc8cb",
       "requesterInn": null,
-      "requesterName": "Демо-компания",
+      "requesterName": "Кондитерская «Пряный Пряник»",
       "isDemo": true,
+      "status": "active",
       "rawText": null,
       "createdAt": "2026-09-07T16:52:00.141Z",
-      "item": "бумажная упаковка с логотипом",
+      "direction": "demand",
+      "item": "бумажная упаковка для тортов с логотипом",
       "qty": "3000 шт",
       "deadline": "2026-10-01",
       "budget": null,
-      "notes": null,
-      "status": "active",
-      "direction": "demand"
+      "notes": "нужна плотная коробка, размер под торт до 2 кг"
     },
     {
-      "id": "c0f28810-6452-401d-8803-fd77ffa7cd5f",
+      "id": "288b726b-b18e-4000-b99c-c1516e00ea60",
       "requesterInn": null,
-      "requesterName": "Демо-компания",
+      "requesterName": "Кейтеринг «Фуршет и Ко»",
       "isDemo": true,
+      "status": "active",
       "rawText": null,
       "createdAt": "2026-09-07T16:52:00.141Z",
-      "item": "кейтеринг на 50 человек",
+      "direction": "demand",
+      "item": "кейтеринг-обслуживание на 50 человек",
       "qty": "50 человек",
       "deadline": "2026-10-20",
       "budget": 250000,
-      "notes": "разовое мероприятие",
+      "notes": "разовое корпоративное мероприятие, нужна посуда и официанты"
+    },
+    {
+      "id": "1a6a0a60-7aaf-4d0c-9ed4-3dffe0f37639",
+      "requesterInn": null,
+      "requesterName": "Пекарня «Хлебный Дом»",
+      "isDemo": true,
       "status": "active",
-      "direction": "demand"
+      "rawText": null,
+      "createdAt": "2026-09-07T16:52:00.141Z",
+      "direction": "supply",
+      "item": "ремесленный хлеб на закваске, оптовые поставки",
+      "qty": "от 100 булок в неделю",
+      "deadline": null,
+      "budget": null,
+      "notes": "печём каждое утро, готовы возить по кафе и магазинам"
+    },
+    {
+      "id": "79e0489c-06bc-4ee3-a843-3f7f7383ee7f",
+      "requesterInn": null,
+      "requesterName": "Кафе «Утренний Круассан»",
+      "isDemo": true,
+      "status": "active",
+      "rawText": null,
+      "createdAt": "2026-09-07T16:52:00.141Z",
+      "direction": "demand",
+      "item": "сливочное масло для выпечки, 82,5%",
+      "qty": "80 кг в месяц",
+      "deadline": "2026-11-05",
+      "budget": 60000,
+      "notes": "важна стабильная жирность, готовы к дегустации перед контрактом"
+    },
+    {
+      "id": "f2866cad-bf5d-4fc8-9683-f0076073a4be",
+      "requesterInn": null,
+      "requesterName": "Кофейня «Зёрна и Точка»",
+      "isDemo": true,
+      "status": "active",
+      "rawText": null,
+      "createdAt": "2026-09-07T16:52:00.141Z",
+      "direction": "supply",
+      "item": "растительное молоко (овсяное, миндальное) оптом",
+      "qty": "200 л в месяц",
+      "deadline": null,
+      "budget": null,
+      "notes": "своё производство, цена ниже рыночной при заказе от 150 л"
+    },
+    {
+      "id": "71ed5850-9494-4d26-9973-8918bcdf318c",
+      "requesterInn": null,
+      "requesterName": "Кондитерская «Три Эклера»",
+      "isDemo": true,
+      "status": "active",
+      "rawText": null,
+      "createdAt": "2026-09-07T16:52:00.141Z",
+      "direction": "demand",
+      "item": "свежая клубника и малина для десертов",
+      "qty": "15 кг в неделю",
+      "deadline": "2026-10-15",
+      "budget": 45000,
+      "notes": "нужна ягода без вмятин, доставка два раза в неделю"
+    },
+    {
+      "id": "5fda5f25-c2d3-4e01-8f9a-d9f8cf198897",
+      "requesterInn": null,
+      "requesterName": "Ресторан «Тёплый Хлеб»",
+      "isDemo": true,
+      "status": "active",
+      "rawText": null,
+      "createdAt": "2026-09-07T16:52:00.141Z",
+      "direction": "demand",
+      "item": "аренда кофемашины с сервисным обслуживанием",
+      "qty": "1 шт",
+      "deadline": null,
+      "budget": 35000,
+      "notes": "бюджет в месяц, важно обслуживание и запчасти в комплекте"
     }
   ],
   "offers": [
     {
       "id": "937f379b-d17e-428e-b3d8-49130cb48392",
-      "requestId": "f5cec142-8af0-42e5-b39b-0d0ba17717f6",
-      "supplierInn": "7707083893",
-      "supplierName": "ПАО СБЕРБАНК",
+      "requestId": "014624fe-2b6d-4a21-9cf8-587abfc627fa",
+      "supplierInn": "7717762862",
+      "supplierName": "ООО \"КОФЕЙНЯ №2\"",
       "price": 150000,
-      "terms": "�������� �� 5 ����",
+      "terms": "доставка за 5 дней, зёрна свежей обжарки",
       "createdAt": "2026-09-07T16:52:40.250Z"
     },
     {
       "id": "c855283d-5d40-4f89-b540-8f4d3f572899",
-      "requestId": "f5cec142-8af0-42e5-b39b-0d0ba17717f6",
-      "supplierInn": "7707083893",
-      "supplierName": "ПАО СБЕРБАНК",
+      "requestId": "014624fe-2b6d-4a21-9cf8-587abfc627fa",
+      "supplierInn": "7717762862",
+      "supplierName": "ООО \"КОФЕЙНЯ №2\"",
       "price": 99000,
       "terms": "поставка за 5 дней, кофе премиум",
       "createdAt": "2026-09-07T16:53:04.003Z"

@@ -2,6 +2,9 @@ import { useState, type CSSProperties } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useCompany } from '../context/CompanyContext'
 import cakeIcon from '../assets/icons/icon_cake.png'
+import coffeeIcon from '../assets/icons/icon_coffe.png'
+import reviewsIcon from '../assets/icons/icon_rewies.png'
+import requestsIcon from '../assets/icons/icon_zayavki.png'
 import type { CompanyType } from '../types'
 
 const LEGAL_FORM_LABELS: Record<CompanyType, string> = {
@@ -16,9 +19,6 @@ function formatDisplayName(rawName: string): string {
 
 const SINCE_YEAR = 2026
 
-const TORTY_MOSKVA_INN = '7724351831'
-const TORTY_MOSKVA_NAME = 'ВКУСНЫЙ КЕЙК'
-const TORTY_MOSKVA_RATING = 4.7
 const AVATAR_COLORS = [
   'var(--palette-blue)',
   'var(--palette-lime)',
@@ -27,7 +27,15 @@ const AVATAR_COLORS = [
   'var(--palette-pink)',
 ]
 
-const TORTY_MOSKVA_REVIEWS = [
+interface Review {
+  title: string
+  initial: string
+  rating: number
+  date: string
+  text: string
+}
+
+const CAKE_REVIEWS: Review[] = [
   { title: 'ООО «КофеПоинт»', initial: 'К', rating: 5, date: '2 сентября 2026', text: 'Отличное качество, стабильно работают уже второй год.' },
   { title: 'ООО «Ивент Групп»', initial: 'И', rating: 5, date: '28 августа 2026', text: 'Работаем по контракту на регулярные поставки — без нареканий.' },
   { title: 'ООО «Технострой»', initial: 'Т', rating: 5, date: '19 августа 2026', text: 'Заказываем на все корпоративные праздники уже третий год.' },
@@ -39,6 +47,50 @@ const TORTY_MOSKVA_REVIEWS = [
   { title: 'ИП Фомина А.Д.', initial: 'Ф', rating: 4, date: '22 мая 2026', text: 'Хорошее соотношение цены и качества, всё по договору.' },
   { title: 'Виктор Н.', initial: 'В', rating: 5, date: '9 мая 2026', text: 'Оперативно ответили на заявку через Мера и закрыли сделку за день.' },
 ]
+
+const COFFEE_REVIEWS: Review[] = [
+  { title: 'ООО «Вектор Диджитал»', initial: 'К', rating: 5, date: '5 сентября 2026', text: 'Заказываем кофе-брейки на все внутренние митапы, всегда вовремя и вкусно.' },
+  { title: 'ИП Соловьёва Е.Н.', initial: 'С', rating: 5, date: '30 августа 2026', text: 'Лучший капучино в округе, берём с собой каждое утро для всей команды.' },
+  { title: 'ООО «Дизайн Бюро Норд»', initial: 'Д', rating: 5, date: '21 августа 2026', text: 'Стабильное качество зерна, бариста всегда на связи по опту.' },
+  { title: 'ИП Мельников Р.А.', initial: 'М', rating: 5, date: '10 августа 2026', text: 'Отличная точка рядом с офисом, оформили абонемент для сотрудников.' },
+  { title: 'ООО «Смарт Ритейл»', initial: 'С', rating: 5, date: '2 августа 2026', text: 'Работаем по контракту на кофе для переговорных уже полгода — всё супер.' },
+  { title: 'ИП Гаврилов Т.И.', initial: 'Г', rating: 4, date: '25 июля 2026', text: 'Вкусно, но иногда очередь по утрам — стоит расширить точку.' },
+  { title: 'ООО «Бизнес Клуб Юг»', initial: 'Б', rating: 4, date: '14 июля 2026', text: 'Заказывали кофе-паузу на конференцию, гостям понравилось.' },
+  { title: 'ИП Кравцова О.П.', initial: 'К', rating: 4, date: '30 июня 2026', text: 'Хороший кофе, но хотелось бы больше вариантов без сахара.' },
+  { title: 'ООО «Финанс Групп»', initial: 'Ф', rating: 4, date: '18 июня 2026', text: 'Берём на регулярной основе для клиентской зоны, претензий почти нет.' },
+  { title: 'ИП Фёдоров А.С.', initial: 'Ф', rating: 4, date: '5 июня 2026', text: 'Приятный персонал, кофе стабильно хорош, доставка иногда задерживается.' },
+  { title: 'ООО «Ромашка Сервис»', initial: 'Р', rating: 3, date: '22 мая 2026', text: 'Кофе нормальный, но цена подросла, а качество осталось прежним.' },
+  { title: 'ИП Тарасова Н.В.', initial: 'Т', rating: 3, date: '10 мая 2026', text: 'Средне — иногда пересушенная выпечка к кофе.' },
+  { title: 'ООО «Альфа Строй»', initial: 'А', rating: 3, date: '28 апреля 2026', text: 'Сработало для разового мероприятия, но на постоянку не перешли.' },
+  { title: 'ИП Симонов Д.К.', initial: 'С', rating: 2, date: '15 апреля 2026', text: 'Дважды привозили заказ позже оговорённого времени.' },
+  { title: 'ООО «Вектор Лоджистикс»', initial: 'В', rating: 1, date: '2 апреля 2026', text: 'Один раз перепутали заказ полностью, пришлось отменять встречу.' },
+]
+
+interface DemoProfile {
+  inn: string
+  name: string
+  rating: number
+  reviews: Review[]
+  avatarIcon: string
+  avatarColor: string
+  avatarIconClassName?: string
+}
+
+// Демо-аккаунты (переключаются на главном экране) — реальные ИНН, но с
+// брендированным именем, аватаром и отзывами вместо настоящих данных.
+const DEMO_PROFILES: DemoProfile[] = [
+  { inn: '7724351831', name: 'ВКУСНЫЙ КЕЙК', rating: 4.7, reviews: CAKE_REVIEWS, avatarIcon: cakeIcon, avatarColor: 'var(--palette-red)' },
+  {
+    inn: '7717762862',
+    name: 'КОФЕ ТОЧКА',
+    rating: 3.8,
+    reviews: COFFEE_REVIEWS,
+    avatarIcon: coffeeIcon,
+    avatarColor: '#2878fd',
+    avatarIconClassName: 'company-details__avatar-icon--coffee',
+  },
+]
+
 const RATING_STARS = [5, 4, 3, 2, 1]
 
 function ReviewCard({
@@ -46,7 +98,7 @@ function ReviewCard({
   index,
   showStatus = true,
 }: {
-  item: (typeof TORTY_MOSKVA_REVIEWS)[number]
+  item: Review
   index: number
   showStatus?: boolean
 }) {
@@ -83,33 +135,46 @@ function ReviewCard({
 }
 
 export function ProfilePage() {
-  const { company } = useCompany()
+  const { company, clearCompany } = useCompany()
   const navigate = useNavigate()
-  const showReviews = company?.inn === TORTY_MOSKVA_INN
+  const demoProfile = DEMO_PROFILES.find((profile) => profile.inn === company?.inn) ?? null
   const [showAllReviews, setShowAllReviews] = useState(false)
 
   if (!company) {
     return <Navigate to="/" replace />
   }
 
-  const ratingValue = showReviews ? TORTY_MOSKVA_RATING : 0
+  const displayName = demoProfile ? demoProfile.name : formatDisplayName(company.name)
+  const ratingValue = demoProfile ? demoProfile.rating : 0
+  const reviews = demoProfile ? demoProfile.reviews : []
   const starFillStyle = { '--fill': `${(ratingValue / 5) * 100}%` } as CSSProperties
 
   return (
     <>
+      <button type="button" className="company-details__logout" onClick={clearCompany}>
+        выйти
+      </button>
+
       <div className="company-details">
         <div className="company-details__content">
           <div className="company-details__profile-card">
             <div className="company-details__profile">
               <div className="company-details__header-row">
                 <div className="company-details__avatar-wrap">
-                  <div className="company-details__avatar">
-                    <img className="company-details__avatar-icon" src={cakeIcon} alt="" />
+                  <div
+                    className="company-details__avatar"
+                    style={demoProfile ? { background: demoProfile.avatarColor } : undefined}
+                  >
+                    <img
+                      className={['company-details__avatar-icon', demoProfile?.avatarIconClassName]
+                        .filter(Boolean)
+                        .join(' ')}
+                      src={demoProfile ? demoProfile.avatarIcon : cakeIcon}
+                      alt=""
+                    />
                   </div>
                 </div>
-                <h1 className="company-details__name">
-                  {showReviews ? TORTY_MOSKVA_NAME : formatDisplayName(company.name)}
-                </h1>
+                <h1 className="company-details__name">{displayName}</h1>
               </div>
 
               <div className="company-details__profile-body">
@@ -127,13 +192,13 @@ export function ProfilePage() {
               </div>
 
               <div className="company-details__quick-row">
-                {showReviews && (
+                {reviews.length > 0 && (
                   <button
                     type="button"
                     className="company-details__quick-tile company-details__quick-tile--reviews"
                     onClick={() => setShowAllReviews(true)}
                   >
-                    <span className="company-details__quick-tile-placeholder">?</span>
+                    <img className="company-details__quick-tile-icon" src={reviewsIcon} alt="" />
                     отзывы
                   </button>
                 )}
@@ -142,7 +207,11 @@ export function ProfilePage() {
                   className="company-details__quick-tile company-details__quick-tile--requests"
                   onClick={() => navigate('/b2b/requests')}
                 >
-                  <span className="company-details__quick-tile-placeholder">?</span>
+                  <img
+                    className="company-details__quick-tile-icon company-details__quick-tile-icon--requests"
+                    src={requestsIcon}
+                    alt=""
+                  />
                   заявки
                 </button>
               </div>
@@ -165,20 +234,20 @@ export function ProfilePage() {
             <div className="reviews-summary">
               <div className="reviews-summary__top">
                 <span className="reviews-summary__value">
-                  {TORTY_MOSKVA_RATING.toFixed(1).replace('.', ',')}
+                  {ratingValue.toFixed(1).replace('.', ',')}
                 </span>
                 <div className="reviews-summary__top-meta">
                   <span className="company-details__stars reviews-summary__stars" style={starFillStyle} aria-hidden="true">
                     <span className="company-details__stars-bg">★★★★★</span>
                     <span className="company-details__stars-fg">★★★★★</span>
                   </span>
-                  <p className="reviews-summary__caption">на основании {TORTY_MOSKVA_REVIEWS.length} оценок</p>
+                  <p className="reviews-summary__caption">на основании {reviews.length} оценок</p>
                 </div>
               </div>
 
               <div className="reviews-summary__breakdown">
                 {RATING_STARS.map((stars) => {
-                  const count = TORTY_MOSKVA_REVIEWS.filter((item) => item.rating === stars).length
+                  const count = reviews.filter((item) => item.rating === stars).length
                   return (
                     <div className="reviews-summary__row" key={stars}>
                       <span className="reviews-summary__row-stars" aria-hidden="true">
@@ -191,7 +260,7 @@ export function ProfilePage() {
                       <span className="reviews-summary__bar">
                         <span
                           className="reviews-summary__bar-fill"
-                          style={{ width: `${(count / TORTY_MOSKVA_REVIEWS.length) * 100}%` }}
+                          style={{ width: `${(count / reviews.length) * 100}%` }}
                         />
                       </span>
                     </div>
@@ -200,7 +269,7 @@ export function ProfilePage() {
               </div>
 
               <div className="review-cards">
-                {TORTY_MOSKVA_REVIEWS.map((item, index) => (
+                {reviews.map((item, index) => (
                   <ReviewCard key={item.title} item={item} index={index} />
                 ))}
               </div>
