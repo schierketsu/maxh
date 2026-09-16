@@ -1,7 +1,7 @@
 import type { Benefit } from '../data/benefits'
 import { statusLabel } from '../lib/matching'
 import type { ProgramStatus } from '../types'
-import newWindowIcon from '../assets/icon_new_window.png'
+import newWindowIcon from '../assets/icons/icon_new_window.png'
 
 const PLACEHOLDER_COLORS = [
   'var(--palette-blue)',

@@ -6,9 +6,9 @@ import { deleteRequest, fetchMyRequests, setRequestStatus } from '../lib/b2bApi'
 import { getContactedRequests, removeContactedRequest, type ContactedRequest } from '../lib/contactedRequests'
 import { formatMoney } from '../lib/matching'
 import type { B2BRequestWithOffers } from '../types'
-import closeIcon from '../assets/icon_close.png'
-import pauseIcon from '../assets/icon_pause.png'
-import playIcon from '../assets/icon_play.png'
+import closeIcon from '../assets/icons/icon_close.png'
+import pauseIcon from '../assets/icons/icon_pause.png'
+import playIcon from '../assets/icons/icon_play.png'
 
 function offersWord(n: number) {
   const mod100 = n % 100

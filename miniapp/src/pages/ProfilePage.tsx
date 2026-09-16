@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useCompany } from '../context/CompanyContext'
-import cakeIcon from '../assets/icon_cake.png'
+import cakeIcon from '../assets/icons/icon_cake.png'
 import type { CompanyType } from '../types'
 
 const LEGAL_FORM_LABELS: Record<CompanyType, string> = {
@@ -125,28 +125,28 @@ export function ProfilePage() {
                   </span>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div className="company-details__quick-row">
-            {showReviews && (
-              <button
-                type="button"
-                className="company-details__quick-tile company-details__quick-tile--reviews"
-                onClick={() => setShowAllReviews(true)}
-              >
-                <span className="company-details__quick-tile-placeholder">?</span>
-                отзывы
-              </button>
-            )}
-            <button
-              type="button"
-              className="company-details__quick-tile company-details__quick-tile--requests"
-              onClick={() => navigate('/b2b/requests')}
-            >
-              <span className="company-details__quick-tile-placeholder">?</span>
-              заявки
-            </button>
+              <div className="company-details__quick-row">
+                {showReviews && (
+                  <button
+                    type="button"
+                    className="company-details__quick-tile company-details__quick-tile--reviews"
+                    onClick={() => setShowAllReviews(true)}
+                  >
+                    <span className="company-details__quick-tile-placeholder">?</span>
+                    отзывы
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="company-details__quick-tile company-details__quick-tile--requests"
+                  onClick={() => navigate('/b2b/requests')}
+                >
+                  <span className="company-details__quick-tile-placeholder">?</span>
+                  заявки
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

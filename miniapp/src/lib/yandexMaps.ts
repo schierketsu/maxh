@@ -1,5 +1,5 @@
 const SCRIPT_ID = 'yandex-maps-script'
-const API_KEY = 'PASTE_YANDEX_MAPS_API_KEY'
+const API_KEY = import.meta.env.VITE_YANDEX_MAPS_API_KEY ?? ''
 
 interface YMapInstance {
   addChild: (child: unknown) => void

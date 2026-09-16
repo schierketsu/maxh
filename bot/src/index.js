@@ -1,28 +1,9 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import './env.js'
 import { linkUser, upsertCompany } from './b2bStore.js'
 import { lookupCompanyByInn } from './dadata.js'
 import { answerCallback, api, chooseApiBase, keyboard } from './max.js'
 import { formatMoney, matchPrograms } from './matching.js'
 import { startServer } from './server.js'
-
-function loadEnvFile() {
-  const envPath = resolve(dirname(fileURLToPath(import.meta.url)), '../.env')
-  if (!existsSync(envPath)) return
-  const raw = readFileSync(envPath, 'utf8')
-  for (const line of raw.split(/\r?\n/)) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
-    const eq = trimmed.indexOf('=')
-    if (eq === -1) continue
-    const key = trimmed.slice(0, eq).trim()
-    const value = trimmed.slice(eq + 1).trim()
-    if (!(key in process.env)) process.env[key] = value
-  }
-}
-
-loadEnvFile()
 
 const DEMO_INNS = ['7707083893', '500100732259', '1653001805']
 const demoLabelCache = new Map()

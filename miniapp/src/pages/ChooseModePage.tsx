@@ -34,7 +34,7 @@ export function ChooseModePage() {
 
       <section className="benefits">
         <h2 className="benefits__title">
-          ваша <span className="benefits__title-accent">мера</span>
+          ваша <span className="benefits__title-accent">mера</span>
         </h2>
         <div className="benefits__list">
           {benefits.slice(0, visibleCount).map((benefit, index) => (

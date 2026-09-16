@@ -5,7 +5,7 @@ import { fetchCompanyDetails } from '../lib/companyApi'
 import { loadYandexMaps, type YMapInstance } from '../lib/yandexMaps'
 import { addContactedRequest, getContactedRequests, removeContactedRequest } from '../lib/contactedRequests'
 import mapCustomization from '../assets/customization.json'
-import contactIcon from '../assets/icon_contact.png'
+import contactIcon from '../assets/icons/icon_contact.png'
 
 type Status = 'loading' | 'ready' | 'no-location' | 'error'
 

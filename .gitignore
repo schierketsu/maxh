@@ -3,4 +3,5 @@ dist
 miniapp/dist
 bot/.env
 in_help/llm.md
+in_help/map.md
 

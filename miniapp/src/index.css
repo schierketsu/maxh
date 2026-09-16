@@ -27,7 +27,7 @@
 
 @font-face {
   font-family: 'Monomakh';
-  src: url('./assets/ofont.ru_Monomakh Unicode.ttf') format('truetype');
+  src: url('./assets/fonts/ofont.ru_Monomakh Unicode.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -39,28 +39,28 @@
    точного файла (уже ловили этот баг на Manrope/font-weight:900). */
 @font-face {
   font-family: 'Styrene A LC';
-  src: url('./assets/Styrene A LC-Regular.otf') format('opentype');
+  src: url('./assets/fonts/Styrene A LC-Regular.otf') format('opentype');
   font-weight: 100 499;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Styrene A LC';
-  src: url('./assets/Styrene A LC-Bold.otf') format('opentype');
+  src: url('./assets/fonts/Styrene A LC-Bold.otf') format('opentype');
   font-weight: 500 900;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Styrene A LC';
-  src: url('./assets/Styrene A LC-Bold Italic.otf') format('opentype');
+  src: url('./assets/fonts/Styrene A LC-Bold Italic.otf') format('opentype');
   font-weight: 500 799;
   font-style: italic;
   font-display: swap;
 }
 @font-face {
   font-family: 'Styrene A LC';
-  src: url('./assets/Styrene A LC-Black Italic.otf') format('opentype');
+  src: url('./assets/fonts/Styrene A LC-Black Italic.otf') format('opentype');
   font-weight: 800 900;
   font-style: italic;
   font-display: swap;
@@ -125,7 +125,18 @@ button, input, select, textarea { font: inherit; }
 /* .gosuslugi-bar — position:fixed, её собственный отступ до края экрана
    (padding-bottom: 26px + safe-area) не зависит от этого значения — здесь
    только резерв места в потоке, чтобы содержимое не заезжало под неё. */
-.onboarding.mode-select-page { padding-bottom: 40px; }
+.onboarding.mode-select-page { position: relative; z-index: 0; padding-bottom: 40px; }
+/* Фон всего экрана авторизации синий — вместо отдельного синего "баннера"
+   у верхней плитки. position:fixed не завязан на паддинги .app-shell и
+   покрывает экран целиком, не сдвигая при этом ни один элемент в потоке. */
+.mode-select-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  /* Подобран по фону картинки back_pod_panel.png, а не --palette-blue. */
+  background: #2d78fd;
+}
 
 .mode-select-tiles { display: flex; flex-direction: column; gap: 12px; flex: 1; }
 .mode-select-tiles__row {
@@ -152,33 +163,53 @@ button, input, select, textarea { font: inherit; }
   border-top-right-radius: 0;
 }
 .mode-select-tile { border-radius: 20px; background: #fff; }
-.mode-select-tile--blue { background: #2d78fd; }
-.mode-select-tiles__row .mode-select-tile--icon-left { justify-content: flex-start; padding-left: 0; gap: 26px; }
-.mode-select-tile__icon { width: auto; height: 122%; margin-left: -74px; object-fit: contain; transform: translateY(14px) rotate(-15deg); }
-.mode-select-tile__text { display: flex; flex-direction: column; align-items: flex-end; padding-right: 4px; }
+/* Раньше у верхней плитки был свой синий фон ("баннер") — теперь вместо
+   него синий у всей страницы (.mode-select-page::before), а сама плитка
+   прозрачная, чтобы не было видно отдельной панели. */
+.mode-select-tile--blue { background: none; }
+.mode-select-tiles__row .mode-select-tile--icon-left { justify-content: flex-start; padding-left: 0; gap: 0; }
+.mode-select-tile__text {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-left: -14px;
+  /* Тот же боковой отступ до правого края экрана, что и у кнопки "Связать
+     через Госуслуги" (.gosuslugi-bar). */
+  padding-right: clamp(2px, .5vw, 4px);
+}
 .mode-select-brand {
+  /* По центру экрана целиком (а не только тайла) — не завязано на поток
+     .mode-select-tile__text, остальные элементы колонки не сдвигаются. */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 5;
+  transform: translate(-50%, -50%);
   margin: 0;
   color: #fff;
   font-family: 'Styrene A LC', var(--family-brand);
-  font-size: clamp(36px, 9.5vw, 48px);
+  font-size: clamp(72px, 19vw, 96px);
   font-weight: 900;
   font-style: normal;
   line-height: 1;
-  text-align: right;
-  /* transform не занимает место в потоке — остальные элементы колонки
-     (.mode-select-tile__caption и т.д.) не сдвигаются. */
-  transform-origin: right center;
-  transform: translateY(-32px) scale(1.45);
+  text-align: center;
 }
-.mode-select-tile__caption {
-  margin: 4px 0 0;
+.mode-select-tagcloud {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.mode-select-tagcloud__item {
+  position: absolute;
+  transform: translate(-50%, -50%) rotate(-45deg);
   color: #fff;
   font-family: 'Styrene A LC', var(--family-brand);
-  font-size: clamp(18px, 5.5vw, 24px);
-  font-weight: 900;
+  font-weight: 700;
   font-style: normal;
-  line-height: 1.08;
-  text-align: right;
+  white-space: nowrap;
 }
 .dashboard {
   /* .dashboard уже сидит внутри .app-shell (padding-top: 18px, padding-bottom:
@@ -276,6 +307,10 @@ button, input, select, textarea { font: inherit; }
   padding: 16px clamp(16px, 4vw, 24px) calc(26px + env(safe-area-inset-bottom));
   background: #f2f2f7;
 }
+/* Панель на экране авторизации не должна перекрывать облако тегов позади
+   неё — убираем её собственный фон (сама кнопка "Госуслуги" при этом
+   остаётся видна и кликабельна поверх тегов благодаря z-index:40 у .gosuslugi-bar). */
+.mode-select-page .gosuslugi-bar { background: none; }
 .gosuslugi-cta {
   width: 100%;
   height: auto;
@@ -397,10 +432,13 @@ button, input, select, textarea { font: inherit; }
 
 .company-details__quick-row {
   display: flex;
+  align-self: stretch;
   gap: 12px;
-  width: 100vw;
-  margin-top: 12px;
-  margin-left: calc(50% - 50vw);
+  /* Панель .company-details__profile-card сама уже имеет горизонтальный
+     паддинг clamp(16px,4vw,24px) — гасим его и задаём свой отступ 12px,
+     равный зазору между плитками, чтобы отступы по бокам совпадали с ним. */
+  margin: 4px calc(-1 * clamp(16px, 4vw, 24px)) 0;
+  padding: 0 12px;
 }
 .company-details__quick-tile {
   position: relative;
@@ -937,7 +975,7 @@ button, input, select, textarea { font: inherit; }
   font-style: normal;
   line-height: 1.15;
 }
-.benefits__title-accent { color: var(--palette-blue); font-weight: 900; font-style: italic; }
+.benefits__title-accent { color: var(--palette-blue); font-weight: 900; font-style: normal; }
 .benefits__list { display: flex; flex-direction: column; gap: 12px; }
 .benefits__more {
   align-self: center;
