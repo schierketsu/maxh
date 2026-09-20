@@ -6,6 +6,7 @@ import { deleteRequest, fetchMyRequests, setRequestStatus } from '../lib/b2bApi'
 import { getContactedRequests, removeContactedRequest, type ContactedRequest } from '../lib/contactedRequests'
 import { formatMoney } from '../lib/matching'
 import { brandCompanyName } from '../lib/demoBranding'
+import { getMaxUserId } from '../lib/maxBridge'
 import type { B2BRequestWithOffers } from '../types'
 import closeIcon from '../assets/icons/icon_close.png'
 import pauseIcon from '../assets/icons/icon_pause.png'
@@ -40,7 +41,7 @@ export function B2BMyRequestsPage() {
 
   useEffect(() => {
     if (!company) return
-    fetchMyRequests(company.inn)
+    fetchMyRequests(company.inn, getMaxUserId())
       .then(setRequests)
       .catch(() => setRequests([]))
   }, [company])

@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { Button } from '@maxhub/max-ui'
 import { useCompany } from '../context/CompanyContext'
 import { createRequest, parseRequestText } from '../lib/b2bApi'
+import { getMaxUserId } from '../lib/maxBridge'
 import type { B2BRequestDirection, ParsedB2BRequest } from '../types'
 
 type Step = 'input' | 'confirm' | 'done'
@@ -50,7 +51,7 @@ export function B2BNewRequestPage() {
     setLoading(true)
     setError(null)
     try {
-      const result = await createRequest(company.inn, fields, text.trim(), direction)
+      const result = await createRequest(company.inn, fields, text.trim(), direction, getMaxUserId())
       setNotified(result.notified)
       setStep('done')
     } catch {

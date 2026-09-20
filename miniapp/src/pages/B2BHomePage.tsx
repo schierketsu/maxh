@@ -5,6 +5,7 @@ import { B2BOpportunityCard } from '../components/B2BOpportunityCard'
 import { useCompany } from '../context/CompanyContext'
 import { fetchOpportunities } from '../lib/b2bApi'
 import { brandCompanyName } from '../lib/demoBranding'
+import { getMaxUserId } from '../lib/maxBridge'
 import type { B2BRequest } from '../types'
 
 export function B2BHomePage() {
@@ -14,7 +15,7 @@ export function B2BHomePage() {
 
   useEffect(() => {
     if (!company) return
-    fetchOpportunities(company.inn)
+    fetchOpportunities(company.inn, getMaxUserId())
       .then(setOpportunities)
       .catch(() => setOpportunities([]))
   }, [company])

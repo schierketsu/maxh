@@ -152,7 +152,7 @@ export function ProfilePage() {
   return (
     <>
       <button type="button" className="company-details__logout" onClick={clearCompany}>
-        выйти
+        выйти из аккаунта
       </button>
 
       <div className="company-details">

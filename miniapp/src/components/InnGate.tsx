@@ -2,8 +2,9 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button, Input } from '@maxhub/max-ui'
 import type { CompanyProfile } from '../types'
-import { fetchCompanyByInn } from '../lib/companyApi'
+import { fetchCompanyByInn, linkMaxUserToCompany } from '../lib/companyApi'
 import { getLikedCompanies, setCompanyLiked } from '../lib/likedCompanies'
+import { getMaxUserId } from '../lib/maxBridge'
 import { useCompany } from '../context/CompanyContext'
 
 interface InnGateProps {
@@ -22,6 +23,14 @@ export function InnGate({ nextPath }: InnGateProps) {
 
   const openCompany = (company: CompanyProfile) => {
     setCompany(company)
+    // Запоминаем связку с MAX user_id, чтобы бот и мини-апп узнавали эту
+    // компанию друг у друга — например, при следующем открытии мини-аппа
+    // из бота через кнопку. Best-effort: не блокируем переход, если не
+    // получилось (например, мы не внутри MAX).
+    const maxUserId = getMaxUserId()
+    if (maxUserId) {
+      linkMaxUserToCompany(company.inn, maxUserId).catch(() => {})
+    }
     navigate(nextPath)
   }
 

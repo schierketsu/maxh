@@ -4,6 +4,7 @@ import { useCompany } from '../context/CompanyContext'
 import { fetchCompanyDetails } from '../lib/companyApi'
 import { fetchOpportunities } from '../lib/b2bApi'
 import { brandCompanyName } from '../lib/demoBranding'
+import { getMaxUserId } from '../lib/maxBridge'
 import { loadYandexMaps, type YMapInstance } from '../lib/yandexMaps'
 import { addContactedRequest, getContactedRequests, removeContactedRequest } from '../lib/contactedRequests'
 import mapCustomization from '../assets/customization.json'
@@ -37,7 +38,7 @@ const FAKE_NEARBY_REQUESTS: MapPin[] = [
  *  через тот же /api/company/:inn/details, что и для своей компании.
  *  У сид-демо-заявок requesterInn === null, координат для них нет — пропускаем. */
 async function geocodeOpportunities(inn: string): Promise<MapPin[]> {
-  const opportunities = await fetchOpportunities(inn).catch(() => [])
+  const opportunities = await fetchOpportunities(inn, getMaxUserId()).catch(() => [])
   const withCoords = await Promise.all(
     opportunities
       .filter((request) => request.requesterInn)

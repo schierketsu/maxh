@@ -3,17 +3,18 @@ import {
   addOffer,
   createRequest,
   deleteRequest,
-  findMatchingCompanies,
   getCompany,
+  getCompanyByUserId,
   getRequest,
+  linkUser,
   listMyRequests,
   listOpportunities,
   setRequestStatus,
   upsertCompany,
 } from './b2bStore.js'
+import { notifyNewRequest, notifyOfferSubmitted } from './b2bNotify.js'
 import { lookupCompanyByInn, lookupCompanyDetailsByInn } from './dadata.js'
 import { extractRequest } from './llm.js'
-import { keyboard, sendMessage } from './max.js'
 
 const CACHE_TTL_MS = 10 * 60 * 1000
 const cache = new Map()
@@ -72,38 +73,6 @@ function readJsonBody(req) {
   })
 }
 
-function offerButton(requestId) {
-  const base = process.env.MINIAPP_URL
-  if (!base) return undefined
-  return keyboard([[{ type: 'link', text: 'Предложить цену', url: `${base.replace(/\/$/, '')}/b2b/offer/${requestId}` }]])
-}
-
-async function notifyMatches(request, requesterCompany) {
-  const matches = findMatchingCompanies(requesterCompany.okved, request.requesterInn)
-  for (const company of matches) {
-    try {
-      await sendMessage(
-        company.userId,
-        [
-          `🤝 Новая возможность для вашей компании`,
-          '',
-          `**${request.item}**`,
-          request.budget ? `Бюджет: до ${request.budget.toLocaleString('ru-RU')} ₽` : null,
-          request.deadline ? `Срок: до ${request.deadline}` : null,
-          '',
-          `Подходит по вашему профилю (${requesterCompany.name}).`,
-        ]
-          .filter(Boolean)
-          .join('\n'),
-        offerButton(request.id),
-      )
-    } catch (error) {
-      console.error(`Notify ${company.inn} failed:`, error.message)
-    }
-  }
-  return matches.length
-}
-
 export function startServer(port = process.env.PORT ?? 3001) {
   const server = createServer(async (req, res) => {
     if (req.method === 'OPTIONS') {
@@ -115,6 +84,30 @@ export function startServer(port = process.env.PORT ?? 3001) {
 
     const url = new URL(req.url, 'http://localhost')
     const { pathname } = url
+
+    // Автораспознавание в мини-аппе через MAX Bridge: если этот MAX user_id
+    // уже был привязан к ИНН (написал боту или один раз подтвердил себя в
+    // мини-аппе), возвращаем его компанию без повторного ввода ИНН.
+    const byUserMatch = pathname.match(/^\/api\/company\/by-user\/(\d+)$/)
+    if (req.method === 'GET' && byUserMatch) {
+      const linked = getCompanyByUserId(byUserMatch[1])
+      if (!linked) {
+        sendJson(res, 404, { error: 'Компания не найдена' })
+        return
+      }
+      try {
+        const company = await getDadataCompany(linked.inn)
+        if (!company) {
+          sendJson(res, 404, { error: 'Компания не найдена' })
+          return
+        }
+        sendJson(res, 200, { company })
+      } catch (error) {
+        console.error('Company lookup failed:', error.message)
+        sendJson(res, 502, { error: 'Не удалось получить данные компании' })
+      }
+      return
+    }
 
     const companyMatch = pathname.match(/^\/api\/company\/(\d{10,12})$/)
     if (req.method === 'GET' && companyMatch) {
@@ -135,6 +128,29 @@ export function startServer(port = process.env.PORT ?? 3001) {
       } catch (error) {
         console.error('Company lookup failed:', error.message)
         sendJson(res, 502, { error: 'Не удалось получить данные компании' })
+      }
+      return
+    }
+
+    // Мини-апп зовёт это сразу после того, как пользователь сам подтвердил
+    // свой ИНН (InnGate) и мы знаем его MAX user_id через Bridge — чтобы
+    // при следующем открытии мини-аппа (или сообщении боту) его узнавали
+    // без повторного ввода. Тот же linkUser, что использует чат-бот.
+    const linkUserMatch = pathname.match(/^\/api\/company\/(\d{10,12})\/link-user$/)
+    if (req.method === 'POST' && linkUserMatch) {
+      const inn = linkUserMatch[1]
+      try {
+        const { userId } = await readJsonBody(req)
+        const numericUserId = Number(userId)
+        if (!Number.isFinite(numericUserId)) {
+          sendJson(res, 400, { error: 'Нужен userId' })
+          return
+        }
+        linkUser(inn, numericUserId, undefined)
+        sendJson(res, 200, { ok: true })
+      } catch (error) {
+        console.error('Link user failed:', error.message)
+        sendJson(res, 502, { error: 'Не удалось привязать пользователя' })
       }
       return
     }
@@ -174,7 +190,7 @@ export function startServer(port = process.env.PORT ?? 3001) {
 
     if (req.method === 'POST' && pathname === '/api/b2b/requests') {
       try {
-        const { inn, item, qty, deadline, budget, notes, rawText, direction } = await readJsonBody(req)
+        const { inn, item, qty, deadline, budget, notes, rawText, direction, userId } = await readJsonBody(req)
         const cleanedInn = String(inn ?? '').replace(/\D/g, '')
         if (!cleanedInn || !item?.trim()) {
           sendJson(res, 400, { error: 'Нужны inn и item' })
@@ -196,6 +212,7 @@ export function startServer(port = process.env.PORT ?? 3001) {
         const request = createRequest({
           requesterInn: cleanedInn,
           requesterName: requesterCompany.name,
+          ownerUserId: Number.isFinite(Number(userId)) ? Number(userId) : null,
           item: item.trim(),
           qty: qty ?? null,
           deadline: deadline ?? null,
@@ -205,7 +222,7 @@ export function startServer(port = process.env.PORT ?? 3001) {
           direction,
         })
 
-        const notified = await notifyMatches(request, requesterCompany)
+        const notified = await notifyNewRequest(request, requesterCompany)
         sendJson(res, 201, { request, notified })
       } catch (error) {
         console.error('Create request failed:', error.message)
@@ -280,24 +297,7 @@ export function startServer(port = process.env.PORT ?? 3001) {
           terms: terms ?? null,
         })
 
-        const requesterCompany = request.requesterInn ? getCompany(request.requesterInn) : null
-        if (requesterCompany?.userId) {
-          try {
-            await sendMessage(
-              requesterCompany.userId,
-              [
-                `📩 Новое предложение по заявке «${request.item}»`,
-                '',
-                `${dadataCompany.name}${result.offer.price ? ` — ${result.offer.price.toLocaleString('ru-RU')} ₽` : ''}`,
-                result.offer.terms ?? null,
-              ]
-                .filter(Boolean)
-                .join('\n'),
-            )
-          } catch (error) {
-            console.error('Notify requester failed:', error.message)
-          }
-        }
+        await notifyOfferSubmitted(result.request, result.offer)
 
         sendJson(res, 201, { offer: result.offer })
       } catch (error) {
@@ -320,19 +320,21 @@ export function startServer(port = process.env.PORT ?? 3001) {
 
     if (req.method === 'GET' && pathname === '/api/b2b/opportunities') {
       const inn = String(url.searchParams.get('inn') ?? '').replace(/\D/g, '')
+      const userId = url.searchParams.get('userId')
       const requesterCompany = inn ? getCompany(inn) : null
-      const opportunities = listOpportunities(inn, requesterCompany?.okved)
+      const opportunities = listOpportunities(inn, requesterCompany?.okved, userId)
       sendJson(res, 200, { opportunities })
       return
     }
 
     if (req.method === 'GET' && pathname === '/api/b2b/my-requests') {
       const inn = String(url.searchParams.get('inn') ?? '').replace(/\D/g, '')
+      const userId = url.searchParams.get('userId')
       if (!inn) {
         sendJson(res, 400, { error: 'Нужен inn' })
         return
       }
-      sendJson(res, 200, { requests: listMyRequests(inn) })
+      sendJson(res, 200, { requests: listMyRequests(inn, userId) })
       return
     }
 

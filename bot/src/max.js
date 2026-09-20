@@ -113,3 +113,27 @@ export async function answerCallback(callbackId, text, attachments) {
     },
   })
 }
+
+/** Отвечает туда же, откуда пришло обновление (сообщение или колбэк) —
+ *  общий helper, нужен и index.js (гос-поддержка), и b2bChat.js (B2B-сеть). */
+export async function sendTo(updateOrMessage, text, attachments) {
+  const message = updateOrMessage.message ?? updateOrMessage
+  const userId = message?.sender?.user_id ?? message?.recipient?.user_id
+  const chatId = message?.recipient?.chat_id
+  const query = userId ? { user_id: userId } : { chat_id: chatId }
+  return api('POST', '/messages', {
+    query,
+    body: {
+      text,
+      format: 'markdown',
+      attachments: attachments ?? null,
+    },
+  })
+}
+
+export function extractSender(target) {
+  const message = target.message ?? target
+  const userId = message?.sender?.user_id ?? target.callback?.user?.user_id ?? message?.recipient?.user_id
+  const chatId = message?.recipient?.chat_id ?? target.chat_id
+  return { userId, chatId }
+}

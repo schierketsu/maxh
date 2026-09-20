@@ -1,14 +1,26 @@
 import './env.js'
-import { linkUser, upsertCompany } from './b2bStore.js'
+import { getCompanyByUserId, linkUser, listMyRequests, unlinkUserFromCompany, upsertCompany } from './b2bStore.js'
+import { handleB2BCallback, handleB2BEntry, handleB2BText } from './b2bChat.js'
+import { benefits, PROMO_BADGES } from './benefits.js'
+import { clearSession } from './chatSessions.js'
 import { lookupCompanyByInn } from './dadata.js'
-import { answerCallback, api, chooseApiBase, keyboard } from './max.js'
-import { formatMoney, matchPrograms } from './matching.js'
+import { DEMO_INNS, brandName } from './demoBrand.js'
+import { getDemoProfile } from './demoProfiles.js'
+import { answerCallback, api, chooseApiBase, extractSender, keyboard, sendTo } from './max.js'
 import { startServer } from './server.js'
 
-const DEMO_INNS = ['7707083893', '500100732259', '1653001805']
+// Реальной авторизации (Госуслуги) в проекте нет — ни в боте, ни в мини-аппе
+// отдельной кнопки для неё больше нет, войти можно только через демо. Текст
+// ниже — общее сообщение для неавторизованного пользователя (используется
+// как fallback в нескольких местах, не только в этом файле).
+const GOSUSLUGI_NOTICE_TEXT =
+  'Авторизация через Госуслуги предполагается в реализованном продукте, на данный момент вы можете протестировать прототип через демо-аккаунты.'
+
 const demoLabelCache = new Map()
 
 async function demoLabel(inn) {
+  const brand = brandName(inn, null)
+  if (brand) return brand
   if (demoLabelCache.has(inn)) return demoLabelCache.get(inn)
   try {
     const company = await lookupCompanyByInn(inn)
@@ -20,81 +32,139 @@ async function demoLabel(inn) {
   }
 }
 
-function mainMenu() {
+/** Номер меры поддержки (1..6) — кнопка открывает её подробное описание
+ *  (см. payload benefit:<id> в handleCallback). Цифрой, а не эмодзи —
+ *  эмодзи на кнопках договорились не использовать нигде. */
+function benefitNumberRow() {
+  return benefits.map((benefit, index) => ({
+    type: 'callback',
+    text: String(index + 1),
+    payload: `benefit:${benefit.id}`,
+  }))
+}
+
+/** Главный экран после привязки компании (демо) — каталог мер поддержки
+ *  прямо тут же (не за отдельной кнопкой, см. companyText), плюс переход в
+ *  B2B-сеть, профиль и уведомления. До привязки этой клавиатуры нет —
+ *  сначала нужно выбрать демо-компанию (см. authMenu). */
+function mainMenu(userId) {
+  const linked = userId ? getCompanyByUserId(userId) : null
+  if (!linked) return undefined
   return keyboard([
-    [{ type: 'callback', text: 'Подобрать меры', payload: 'menu:match' }],
-    [
-      { type: 'callback', text: 'Демо-компании', payload: 'menu:demo' },
-      { type: 'callback', text: 'Как это работает', payload: 'menu:how' },
-    ],
-    [{ type: 'callback', text: 'Ping', payload: 'menu:ping' }],
+    benefitNumberRow(),
+    [{ type: 'callback', text: 'B2B-сеть', payload: 'menu:b2b' }],
+    [{ type: 'callback', text: 'Профиль', payload: 'menu:profile' }],
+    [{ type: 'callback', text: 'Уведомления', payload: 'menu:notifications' }],
   ])
 }
 
-async function demoMenu() {
+/** Клавиатура для неавторизованного пользователя — те же демо-компании, что
+ *  и на экране входа в мини-аппе (реальной авторизации пока нет, см.
+ *  GOSUSLUGI_NOTICE_TEXT). */
+async function authMenu() {
   const rows = await Promise.all(
-    DEMO_INNS.map(async (inn) => [
-      { type: 'callback', text: await demoLabel(inn), payload: `inn:${inn}` },
-    ]),
+    DEMO_INNS.map(async (inn) => [{ type: 'callback', text: await demoLabel(inn), payload: `inn:${inn}` }]),
   )
   return keyboard(rows)
+}
+
+/** Меню для уже привязанной компании, иначе — экран входа. */
+async function currentMenu(userId) {
+  return mainMenu(userId) ?? (await authMenu())
+}
+
+/** Текст для уже привязанной компании — сразу каталог мер (companyText),
+ *  иначе приветствие с просьбой выбрать демо. */
+function landingText(userId, name) {
+  const linked = userId ? getCompanyByUserId(userId) : null
+  return linked ? companyText(linked) : startText(name)
 }
 
 function startText(name) {
   const who = name ? `, ${name}` : ''
   return [
-    `Привет${who}! Я Мера — AI-агент господдержки бизнеса.`,
+    `Привет${who}! Я Мера — AI-агент господдержки и B2B-сети для бизнеса.`,
     '',
-    'Пришлите ИНН (10 или 12 цифр) или выберите демо-компанию.',
-    'Я подберу 3–5 подходящих программ и объясню соответствие.',
+    'Профиль подтверждён через Госуслуги — нашли компании, которыми вы владеете:',
   ].join('\n')
 }
 
+/** Число полученных предложений по своим B2B-заявкам — тот же смысл, что
+ *  и у пустой плашки "нет уведомлений" в мини-аппе (ChooseModePage.tsx),
+ *  только не заглушка, а реальный счётчик, раз данные уже под рукой. */
+function notificationsCount(inn, ownerUserId) {
+  return listMyRequests(inn, ownerUserId).reduce((sum, request) => sum + request.offers.length, 0)
+}
+
+/** 1️⃣2️⃣… — юникодная "клавиша с цифрой", той же цифрой, что и у кнопки под
+ *  этим пунктом (benefitNumberRow), чтобы в тексте и в клавиатуре было
+ *  видно одно и то же число. */
+function numberEmoji(n) {
+  return `${n}️⃣`
+}
+
+/** Короткая версия — заголовок и только первая строка описания, полный
+ *  текст доступен по кнопке-цифре (см. benefitDetailText). */
 function companyText(company) {
-  const matches = matchPrograms(company)
-  const total = matches.reduce((sum, item) => sum + item.amountPotential, 0)
-  const lines = [
-    `Профиль: ${company.name}`,
-    `${company.region} · ${company.industry} · ${company.employees} сотрудников`,
-    '',
-    `Нашлось ${matches.length} программ, потенциал до ${formatMoney(total)}.`,
-    '',
-  ]
+  const lines = [brandName(company.inn, company.name), `Уведомления: ${notificationsCount(company.inn, company.userId)}`, '']
 
-  for (const item of matches) {
-    const gaps = item.unmet.length
-      ? ` · осталось ${item.unmet.length} усл.`
-      : ' · подходит'
-    lines.push(`• ${item.score}% · ${item.program.title} · ${formatMoney(item.amountPotential)}${gaps}`)
-  }
+  benefits.forEach((benefit, index) => {
+    const shortDescription = benefit.description.split('\n')[0]
+    lines.push(`${numberEmoji(index + 1)} ${benefit.title}`, shortDescription, '')
+  })
 
-  lines.push('', 'Пришлите другой ИНН или нажмите «Демо-компании».')
+  lines.push('Хотите ознакомиться с чем-то?')
   return lines.join('\n')
 }
 
-async function sendTo(updateOrMessage, text, attachments) {
-  const message = updateOrMessage.message ?? updateOrMessage
-  const userId = message?.sender?.user_id ?? message?.recipient?.user_id
-  const chatId = message?.recipient?.chat_id
-  const query = userId ? { user_id: userId } : { chat_id: chatId }
-  return api('POST', '/messages', {
-    query,
-    body: {
-      text,
-      format: 'markdown',
-      attachments: attachments ?? null,
-    },
-  })
+function benefitDetailText(benefit, index) {
+  return [benefit.title, '', benefit.description, '', PROMO_BADGES[index % PROMO_BADGES.length]].join('\n')
 }
 
-function extractSender(target) {
-  const message = target.message ?? target
-  const userId = message?.sender?.user_id ?? target.callback?.user?.user_id ?? message?.recipient?.user_id
-  const chatId = message?.recipient?.chat_id ?? target.chat_id
-  return { userId, chatId }
+/** Столько же звёзд, сколько заливается в мини-аппе при округлении рейтинга
+ *  до целого — там это плавная заливка по проценту, тут только целые. */
+function starsText(rating) {
+  const filled = Math.round(rating)
+  return '★'.repeat(filled) + '☆'.repeat(5 - filled)
+}
+
+function ratingText(rating) {
+  return `${rating.toFixed(1).replace('.', ',')} ${starsText(rating)}`
+}
+
+function profileText(linked) {
+  const demo = getDemoProfile(linked.inn)
+  const lines = [brandName(linked.inn, linked.name)]
+  if (demo) lines.push(ratingText(demo.rating))
+  return lines.join('\n')
+}
+
+function profileMenu(linked) {
+  const demo = getDemoProfile(linked.inn)
+  const rows = []
+  const quickRow = []
+  if (demo?.reviews.length) quickRow.push({ type: 'callback', text: 'Отзывы', payload: 'profile:reviews' })
+  quickRow.push({ type: 'callback', text: 'Заявки', payload: 'b2b:my' })
+  rows.push(quickRow)
+  rows.push([{ type: 'callback', text: 'Выйти из аккаунта', payload: 'profile:logout' }])
+  rows.push([{ type: 'callback', text: 'Назад', payload: 'menu:main' }])
+  return keyboard(rows)
+}
+
+function reviewsText(linked) {
+  const demo = getDemoProfile(linked.inn)
+  if (!demo) return 'Отзывов пока нет.'
+  const lines = [`${ratingText(demo.rating)} · на основании ${demo.reviews.length} оценок`, '']
+  for (const review of demo.reviews.slice(0, 5)) {
+    lines.push(`${review.title} · ${starsText(review.rating)} · ${review.date}`, review.text, '')
+  }
+  if (demo.reviews.length > 5) lines.push(`И ещё ${demo.reviews.length - 5}.`)
+  return lines.join('\n')
 }
 
 async function handleInn(target, inn) {
+  const { userId, chatId } = extractSender(target)
+
   let company
   try {
     company = await lookupCompanyByInn(inn)
@@ -102,27 +172,23 @@ async function handleInn(target, inn) {
     console.error('DaData lookup failed:', error.message)
     const text = 'Не удалось получить данные по ИНН. Попробуйте ещё раз чуть позже.'
     if (target.callback) {
-      await answerCallback(target.callback.callback_id, text, mainMenu())
+      await answerCallback(target.callback.callback_id, text, await currentMenu(userId))
     } else {
-      await sendTo(target, text, mainMenu())
+      await sendTo(target, text, await currentMenu(userId))
     }
     return
   }
 
   if (!company) {
-    const text = [
-      `Компания с ИНН ${inn} не найдена.`,
-      'Проверьте номер или попробуйте демо-компанию:',
-    ].join('\n')
+    const text = [`Компания с ИНН ${inn} не найдена.`, 'Попробуйте демо-компанию:'].join('\n')
     if (target.callback) {
-      await answerCallback(target.callback.callback_id, text, await demoMenu())
+      await answerCallback(target.callback.callback_id, text, await authMenu())
     } else {
-      await sendTo(target, text, await demoMenu())
+      await sendTo(target, text, await authMenu())
     }
     return
   }
 
-  const { userId, chatId } = extractSender(target)
   upsertCompany(company.inn, {
     name: company.name,
     region: company.region,
@@ -133,98 +199,132 @@ async function handleInn(target, inn) {
 
   const text = companyText(company)
   if (target.callback) {
-    await answerCallback(target.callback.callback_id, text, mainMenu())
+    await answerCallback(target.callback.callback_id, text, mainMenu(userId))
   } else {
-    await sendTo(target, text, mainMenu())
+    await sendTo(target, text, mainMenu(userId))
   }
 }
 
 async function handleCallback(update) {
   const payload = update.callback?.payload ?? ''
   const callbackId = update.callback.callback_id
+  const { userId } = extractSender(update)
 
-  if (payload === 'menu:ping') {
-    await answerCallback(callbackId, 'pong — бот на связи.', mainMenu())
-    return
-  }
-  if (payload === 'menu:how') {
-    await answerCallback(
-      callbackId,
-      [
-        'Сценарий Меры:',
-        '1. Берём ИНН и собираем профиль бизнеса.',
-        '2. Сопоставляем его с требованиями программ.',
-        '3. Показываем 3–5 самых реальных мер, а не весь каталог.',
-        '',
-        'Дальше подключим мини-приложение и уведомления о новых грантах.',
-      ].join('\n'),
-      mainMenu(),
-    )
-    return
-  }
-  if (payload === 'menu:demo' || payload === 'menu:match') {
-    await answerCallback(
-      callbackId,
-      payload === 'menu:demo'
-        ? 'Выберите демо-компанию или пришлите свой ИНН.'
-        : 'Пришлите ИНН или выберите демо-компанию.',
-      await demoMenu(),
-    )
-    return
-  }
   if (payload.startsWith('inn:')) {
     await handleInn(update, payload.slice(4))
     return
   }
+  if (payload === 'menu:main') {
+    if (userId) clearSession(userId)
+    const linked = userId ? getCompanyByUserId(userId) : null
+    if (!linked) {
+      await answerCallback(callbackId, GOSUSLUGI_NOTICE_TEXT, await authMenu())
+      return
+    }
+    await answerCallback(callbackId, companyText(linked), mainMenu(userId))
+    return
+  }
+  if (payload === 'menu:b2b') {
+    await handleB2BEntry(update)
+    return
+  }
+  if (payload.startsWith('b2b:')) {
+    await handleB2BCallback(update, payload)
+    return
+  }
+  if (payload.startsWith('benefit:')) {
+    const id = payload.slice('benefit:'.length)
+    const index = benefits.findIndex((benefit) => benefit.id === id)
+    if (index === -1) {
+      await answerCallback(callbackId, 'Не нашёл эту меру поддержки.', await currentMenu(userId))
+      return
+    }
+    await answerCallback(
+      callbackId,
+      benefitDetailText(benefits[index], index),
+      keyboard([[{ type: 'callback', text: 'Назад', payload: 'menu:main' }]]),
+    )
+    return
+  }
+  if (payload === 'menu:notifications') {
+    const linked = userId ? getCompanyByUserId(userId) : null
+    if (!linked) {
+      await answerCallback(callbackId, GOSUSLUGI_NOTICE_TEXT, await authMenu())
+      return
+    }
+    await answerCallback(
+      callbackId,
+      'Ожидается разработка',
+      keyboard([[{ type: 'callback', text: 'Назад', payload: 'menu:main' }]]),
+    )
+    return
+  }
+  if (payload === 'menu:profile') {
+    const linked = userId ? getCompanyByUserId(userId) : null
+    if (!linked) {
+      await answerCallback(callbackId, GOSUSLUGI_NOTICE_TEXT, await authMenu())
+      return
+    }
+    await answerCallback(callbackId, profileText(linked), profileMenu(linked))
+    return
+  }
+  if (payload === 'profile:reviews') {
+    const linked = userId ? getCompanyByUserId(userId) : null
+    if (!linked) {
+      await answerCallback(callbackId, GOSUSLUGI_NOTICE_TEXT, await authMenu())
+      return
+    }
+    await answerCallback(
+      callbackId,
+      reviewsText(linked),
+      keyboard([[{ type: 'callback', text: 'Назад', payload: 'menu:profile' }]]),
+    )
+    return
+  }
+  if (payload === 'profile:logout') {
+    if (userId) unlinkUserFromCompany(userId)
+    if (userId) clearSession(userId)
+    await answerCallback(callbackId, 'Вы вышли из аккаунта. Выберите демо-компанию заново:', await authMenu())
+    return
+  }
 
-  await answerCallback(callbackId, 'Не распознал кнопку. Нажмите /start', mainMenu())
+  await answerCallback(callbackId, 'Не распознал кнопку. Нажмите /start', await currentMenu(userId))
 }
 
 async function handleMessage(update) {
   const text = (update.message?.body?.text ?? '').trim()
   const name = update.message?.sender?.first_name
   const command = text.split(/\s+/)[0].replace(/^\//, '').split('@')[0].toLowerCase()
+  const { userId } = extractSender(update)
+
+  if (text.startsWith('/') && userId) clearSession(userId)
 
   if (!text || command === 'start') {
-    await sendTo(update, startText(name), mainMenu())
-    return
-  }
-  if (command === 'ping') {
-    await sendTo(update, 'pong', mainMenu())
+    await sendTo(update, landingText(userId, name), await currentMenu(userId))
     return
   }
   if (command === 'help') {
     await sendTo(
       update,
-      [
-        'Команды:',
-        '/start — начать',
-        '/ping — проверка связи',
-        '/help — эта справка',
-        '/demo — демо-компании',
-        '',
-        'Или просто пришлите ИНН.',
-      ].join('\n'),
-      mainMenu(),
+      ['Команды:', '/start — начать', '/demo — демо-компании', '/help — эта справка'].join('\n'),
+      await currentMenu(userId),
     )
     return
   }
   if (command === 'demo') {
-    await sendTo(update, 'Выберите демо-компанию:', await demoMenu())
+    await sendTo(update, 'Выберите демо-компанию:', await authMenu())
     return
   }
 
-  const digits = text.replace(/\D/g, '')
-  if (digits.length === 10 || digits.length === 12) {
-    await handleInn(update, digits)
+  if (await handleB2BText(update, text)) return
+
+  const linked = userId ? getCompanyByUserId(userId) : null
+  if (!linked) {
+    await sendTo(update, GOSUSLUGI_NOTICE_TEXT, await authMenu())
     return
   }
 
-  await sendTo(
-    update,
-    'Не понял сообщение. Пришлите ИНН или нажмите кнопку ниже.',
-    mainMenu(),
-  )
+  await sendTo(update, 'Не понял сообщение. Нажмите кнопку ниже.', mainMenu(userId))
 }
 
 async function handleUpdate(update) {
@@ -238,7 +338,7 @@ async function handleUpdate(update) {
         recipient: { chat_id: update.chat_id, user_id: update.user?.user_id },
       },
     }
-    await sendTo(fake, startText(update.user?.first_name), mainMenu())
+    await sendTo(fake, landingText(update.user?.user_id, update.user?.first_name), await currentMenu(update.user?.user_id))
     return
   }
   if (type === 'message_callback') {
@@ -256,18 +356,17 @@ async function registerCommands() {
     body: {
       commands: [
         { name: 'start', description: 'Запустить бота' },
-        { name: 'demo', description: 'Демо-компании для подбора мер' },
-        { name: 'ping', description: 'Проверить работоспособность бота' },
+        { name: 'demo', description: 'Демо-компании' },
         { name: 'help', description: 'Показать справку по командам' },
       ],
     },
   })
-  console.log('Bot commands updated: /start /demo /ping /help')
+  console.log('Bot commands updated: /start /demo /help')
 }
 
 async function poll() {
   let marker
-  console.log('Long polling started. Open MAX → t264_hakaton_bot and send /start')
+  console.log('Long polling started. Open MAX → t215_hakaton_max_bot and send /start')
 
   while (true) {
     try {

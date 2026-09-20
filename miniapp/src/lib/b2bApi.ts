@@ -17,14 +17,21 @@ async function handle<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>
 }
 
-export async function fetchOpportunities(inn: string): Promise<B2BRequest[]> {
-  const res = await fetch(`${API_BASE}/api/b2b/opportunities?inn=${inn}`)
+// userId — MAX user_id тестера (см. lib/maxBridge.ts, getMaxUserId), та же
+// личная песочница, что и в чат-боте (bot/src/b2bStore.js, testers): без
+// него заявка/лента видна как общая, не привязанная ни к какому тестеру.
+function userIdParam(userId?: number | null): string {
+  return userId != null ? `&userId=${userId}` : ''
+}
+
+export async function fetchOpportunities(inn: string, userId?: number | null): Promise<B2BRequest[]> {
+  const res = await fetch(`${API_BASE}/api/b2b/opportunities?inn=${inn}${userIdParam(userId)}`)
   const data = await handle<{ opportunities: B2BRequest[] }>(res)
   return data.opportunities
 }
 
-export async function fetchMyRequests(inn: string): Promise<B2BRequestWithOffers[]> {
-  const res = await fetch(`${API_BASE}/api/b2b/my-requests?inn=${inn}`)
+export async function fetchMyRequests(inn: string, userId?: number | null): Promise<B2BRequestWithOffers[]> {
+  const res = await fetch(`${API_BASE}/api/b2b/my-requests?inn=${inn}${userIdParam(userId)}`)
   const data = await handle<{ requests: B2BRequestWithOffers[] }>(res)
   return data.requests
 }
@@ -53,11 +60,12 @@ export async function createRequest(
   fields: ParsedB2BRequest,
   rawText: string | null,
   direction: B2BRequestDirection,
+  userId?: number | null,
 ): Promise<{ request: B2BRequest; notified: number }> {
   const res = await fetch(`${API_BASE}/api/b2b/requests`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ inn, ...fields, rawText, direction }),
+    body: JSON.stringify({ inn, ...fields, rawText, direction, userId }),
   })
   return handle(res)
 }

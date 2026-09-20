@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { DEMO_INNS } from './demoBrand.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DATA_PATH = resolve(__dirname, '../data/b2b.json')
@@ -91,9 +92,15 @@ function seedData() {
   const now = new Date().toISOString()
   return {
     companies: {},
+    // testers: личная песочница каждого MAX-аккаунта — какую компанию (ИНН)
+    // он сейчас представляет. Раньше userId/chatId хранились прямо в
+    // companies[inn], из-за чего два тестера, выбравших одну и ту же
+    // демо-компанию, перезаписывали друг друга (см. миграцию ниже).
+    testers: {},
     requests: DEMO_REQUESTS.map((req) => ({
       id: randomUUID(),
       requesterInn: null,
+      ownerUserId: null,
       isDemo: true,
       status: 'active',
       rawText: null,
@@ -104,11 +111,33 @@ function seedData() {
   }
 }
 
-/** Заявки, сохранённые до появления полей status/direction, получают значения по умолчанию. */
+/** Заявки, сохранённые до появления полей status/direction, получают значения по
+ *  умолчанию. Старые данные, где userId/chatId ещё лежали в companies[inn],
+ *  переносятся в testers (по одному тестеру на MAX user_id, а не на ИНН) —
+ *  и заявки задним числом получают ownerUserId, если владельца можно
+ *  однозначно определить по тому, кто сейчас привязан к их ИНН. */
 function migrate(loaded) {
+  loaded.testers ??= {}
+  for (const [inn, company] of Object.entries(loaded.companies ?? {})) {
+    if (company.userId != null && loaded.testers[company.userId] === undefined) {
+      loaded.testers[company.userId] = {
+        inn,
+        chatId: company.chatId,
+        updatedAt: company.updatedAt ?? new Date().toISOString(),
+      }
+    }
+    delete company.userId
+    delete company.chatId
+  }
   for (const request of loaded.requests) {
     request.status ??= 'active'
     request.direction ??= 'demand'
+    if (request.ownerUserId === undefined) {
+      const owner = request.requesterInn
+        ? Object.entries(loaded.testers).find(([, t]) => t.inn === request.requesterInn)
+        : null
+      request.ownerUserId = owner ? Number(owner[0]) : null
+    }
   }
   return loaded
 }
@@ -159,16 +188,66 @@ export function getCompany(inn) {
   return data.companies[String(inn).replace(/\D/g, '')] ?? null
 }
 
-/** Called by the bot whenever it resolves a company for a chat user — this is how we learn userId↔ИНН. */
+/** Called by the bot whenever it resolves a company for a chat user — записывает
+ *  личную песочницу этого MAX-аккаунта (какой ИНН он сейчас представляет), а
+ *  не общий профиль компании — так два тестера могут одновременно быть
+ *  "ВКУСНЫЙ КЕЙК", не перезаписывая друг друга. */
 export function linkUser(inn, userId, chatId) {
-  return upsertCompany(inn, { userId, chatId })
+  const cleaned = String(inn).replace(/\D/g, '')
+  const numeric = Number(userId)
+  if (!Number.isFinite(numeric)) return null
+  const existing = data.testers[numeric] ?? {}
+  data.testers[numeric] = {
+    inn: cleaned,
+    chatId: chatId ?? existing.chatId,
+    updatedAt: new Date().toISOString(),
+  }
+  save()
+  return data.testers[numeric]
 }
 
-export function createRequest({ requesterInn, requesterName, item, qty, deadline, budget, notes, rawText, direction }) {
+/** Обратный поиск: по MAX user_id находим, какую компанию сейчас представляет
+ *  этот тестер (своя песочница, см. linkUser), и подмешиваем общий профиль
+ *  компании (название/ОКВЭД и т.д.) для отображения. */
+export function getCompanyByUserId(userId) {
+  const numeric = Number(userId)
+  if (!Number.isFinite(numeric)) return null
+  const tester = data.testers[numeric]
+  if (!tester) return null
+  const company = data.companies[tester.inn] ?? { inn: tester.inn }
+  return { ...company, inn: tester.inn, userId: numeric, chatId: tester.chatId }
+}
+
+/** "Выйти из аккаунта" в чате — убирает личную песочницу этого MAX-аккаунта,
+ *  не трогая общий профиль компании (окведы и т.д. остаются в кэше на
+ *  случай, если кто-то ещё привяжется к тому же ИНН). */
+export function unlinkUserFromCompany(userId) {
+  const numeric = Number(userId)
+  if (!Number.isFinite(numeric)) return null
+  const existing = data.testers[numeric]
+  if (!existing) return null
+  delete data.testers[numeric]
+  save()
+  return existing
+}
+
+export function createRequest({
+  requesterInn,
+  requesterName,
+  ownerUserId,
+  item,
+  qty,
+  deadline,
+  budget,
+  notes,
+  rawText,
+  direction,
+}) {
   const request = {
     id: randomUUID(),
     requesterInn,
     requesterName,
+    ownerUserId: ownerUserId == null ? null : Number(ownerUserId),
     isDemo: false,
     status: 'active',
     direction: direction === 'supply' ? 'supply' : 'demand',
@@ -206,9 +285,17 @@ export function deleteRequest(id) {
   return true
 }
 
-export function listOpportunities(excludeInn, myOkved) {
+/** Чужие открытые заявки. Своя песочница: помимо общих сид-заявок видны
+ *  только заявки БЕЗ владельца (сиды) или созданные тем же тестером под
+ *  другой из его демо-личностей (чтобы можно было соло-продемонстрировать
+ *  цикл заявка→предложение, переключаясь между двумя демо-компаниями) —
+ *  чужие живые заявки других тестеров не протекают в эту ленту. */
+export function listOpportunities(excludeInn, myOkved, ownerUserId) {
   const cleaned = String(excludeInn ?? '').replace(/\D/g, '')
-  const open = data.requests.filter((r) => r.requesterInn !== cleaned && r.status === 'active')
+  const numericOwner = ownerUserId == null ? null : Number(ownerUserId)
+  const open = data.requests.filter(
+    (r) => r.requesterInn !== cleaned && r.status === 'active' && (r.ownerUserId == null || r.ownerUserId === numericOwner),
+  )
   if (!myOkved?.length) return open
   return [...open].sort((a, b) => {
     const aMatch = sharesOkved(myOkved, getCompany(a.requesterInn)?.okved) ? 1 : 0
@@ -217,10 +304,14 @@ export function listOpportunities(excludeInn, myOkved) {
   })
 }
 
-export function listMyRequests(inn) {
+/** "Мои заявки" — заявки от этого ИНН, созданные именно этим тестером
+ *  (ownerUserId), а не любым, кто когда-либо был привязан к тому же
+ *  демо-ИНН. */
+export function listMyRequests(inn, ownerUserId) {
   const cleaned = String(inn).replace(/\D/g, '')
+  const numericOwner = ownerUserId == null ? null : Number(ownerUserId)
   return data.requests
-    .filter((r) => r.requesterInn === cleaned)
+    .filter((r) => r.requesterInn === cleaned && (r.ownerUserId ?? null) === numericOwner)
     .map((r) => ({ ...r, offers: data.offers.filter((o) => o.requestId === r.id) }))
 }
 
@@ -241,10 +332,20 @@ export function addOffer({ requestId, supplierInn, supplierName, price, terms })
   return { offer, request }
 }
 
-/** Companies with a known MAX userId whose ОКВЭД overlaps the request's requester — candidates to notify. */
+/** Кандидаты на MAX-пуш о новой заявке — компании с известным тестером и
+ *  пересекающимся ОКВЭД. Демо-ИНН сюда намеренно не попадают: демо-компанию
+ *  в любой момент представляет N разных тестеров в своих песочницах, и
+ *  пушить чужому реальному MAX-аккаунту только потому, что он тоже когда-то
+ *  выбрал ту же демо-компанию, было бы утечкой между песочницами. Для
+ *  реальных ИНН такой неоднозначности нет — один тестер, один ИНН. */
 export function findMatchingCompanies(okvedList, excludeInn) {
   const cleaned = String(excludeInn ?? '').replace(/\D/g, '')
-  return Object.values(data.companies).filter(
-    (c) => c.inn !== cleaned && c.userId && sharesOkved(okvedList, c.okved),
-  )
+  const candidates = []
+  for (const [userId, tester] of Object.entries(data.testers)) {
+    if (tester.inn === cleaned || DEMO_INNS.includes(tester.inn)) continue
+    const company = data.companies[tester.inn]
+    if (!company || !sharesOkved(okvedList, company.okved)) continue
+    candidates.push({ ...company, userId: Number(userId), chatId: tester.chatId })
+  }
+  return candidates
 }
