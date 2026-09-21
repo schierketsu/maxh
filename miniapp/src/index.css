@@ -303,6 +303,7 @@ button, input, select, textarea { font: inherit; }
   padding-top: calc(54px + env(safe-area-inset-top));
 }
 .b2b-home, .b2b-my-requests, .b2b-new-request, .b2b-offer { padding-bottom: var(--home-toolbar-space); }
+.notifications-page { padding-top: calc(54px + env(safe-area-inset-top)); padding-bottom: var(--home-toolbar-space); }
 .b2b-new-request--confirm { padding-top: calc(54px + env(safe-area-inset-top)); }
 
 .b2b-new-request--done {
@@ -465,17 +466,17 @@ button, input, select, textarea { font: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 36px;
-  padding: 0 16px;
+  height: auto;
+  padding: 16px 20px;
   border: 0;
-  border-radius: 18px;
+  border-radius: 14px;
   background: #fff;
   color: var(--ink);
   font-size: clamp(14px, 4vw, 18px);
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgb(0 0 0 / 12%);
+  box-shadow: none;
 }
 .company-details__content {
   max-width: 600px;
@@ -594,6 +595,23 @@ button, input, select, textarea { font: inherit; }
   object-fit: contain;
 }
 .company-details__quick-tile-icon--requests { width: 100px; height: 100px; }
+/* В том же .company-details__quick-row, что и "отзывы"/"заявки" — тот же
+   боковой отступ (row сама уже гасит паддинг карточки). По высоте вдвое
+   ниже плитки отзывов/заявок (та — квадрат при ширине в половину ряда,
+   т.е. 2/1 от полной ширины ряда; тут 4/1 — вдвое меньше той высоты). */
+.company-details__notifications-cta {
+  flex: 1;
+  aspect-ratio: 4 / 1;
+  border: 0;
+  border-radius: 16px;
+  background: var(--palette-purple);
+  color: #fff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
 
 .company-reviews-list {
   position: fixed;
@@ -739,6 +757,40 @@ button, input, select, textarea { font: inherit; }
   font-size: 15px;
   cursor: pointer;
 }
+/* Панель персональных рекомендаций сверху карты — те же размеры/отступы и
+   тот же крестик закрытия (.map-popup__close), что у панели чужой заявки
+   (.map-popup) снизу, просто top вместо bottom. */
+.map-toppanel {
+  position: fixed;
+  left: clamp(16px, 4vw, 24px);
+  right: clamp(16px, 4vw, 24px);
+  top: calc(16px + env(safe-area-inset-top));
+  z-index: 45;
+  padding: 16px 44px 20px 16px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, .15);
+}
+.map-toppanel__title { margin: 0 0 8px; color: var(--ink); font-size: 1rem; font-weight: 700; }
+.map-toppanel__item { display: flex; flex-direction: column; gap: 2px; }
+.map-toppanel__item-name { color: var(--ink); font-size: .95rem; font-weight: 700; }
+.map-toppanel__item-need { color: var(--ink-soft); font-size: .9rem; font-weight: 400; line-height: 1.35; }
+.map-toppanel__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  margin-top: 10px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--palette-lime);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.map-toppanel__cta:active { background: var(--yellow); }
 .map-popup__name-row { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; }
 .map-popup__name { margin: 0; color: var(--ink); font-size: 1rem; font-weight: 700; }
 .map-popup__need { margin: 0; color: var(--ink-soft); font-size: 1rem; font-weight: 400; line-height: 1.4; }
@@ -771,6 +823,7 @@ button, input, select, textarea { font: inherit; }
   justify-content: center;
   min-height: 120px;
   padding: 48px 20px;
+  border: 0;
   border-radius: 24px;
   background: #fff;
   color: var(--ink);
@@ -779,6 +832,8 @@ button, input, select, textarea { font: inherit; }
   text-align: center;
 }
 .notice-tile--fill { flex: 1 1 0; }
+.notice-tile--compact { min-height: 0; padding: 22px 20px; gap: 8px; }
+.notice-tile__dot { flex: 0 0 auto; }
 .notice-tile--gap-before { margin-top: 10px; }
 .notice-tile--image { position: relative; min-height: 300px; padding: 0; overflow: hidden; border: 0; }
 .notice-tile__image { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -1040,6 +1095,25 @@ button, input, select, textarea { font: inherit; }
   cursor: pointer;
 }
 .requests-table__row--empty { justify-content: center; padding: 32px 16px; color: var(--ink-soft); font-size: 1rem; cursor: default; }
+.notification-row { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; }
+.notification-row__text { margin: 0; color: var(--ink); font-size: 16px; font-weight: 500; line-height: 1.4; }
+.notification-row__actions { display: flex; gap: 10px; }
+.notification-row__action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  font-size: .95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.notification-row__action--accept { background: var(--palette-lime); }
+.notification-row__action--decline { background: var(--orange); }
+.notification-row__response { margin: 0; color: var(--ink-soft); font-size: 13px; font-weight: 500; }
 .requests-table__details {
   display: flex;
   flex-direction: column;

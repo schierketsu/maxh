@@ -10,7 +10,7 @@ import { keyboard, sendMessage } from './max.js'
 // findMatchingCompanies), так что предложение целиком оформляется в чате,
 // без захода в мини-апп.
 function offerButton(requestId) {
-  return keyboard([[{ type: 'callback', text: 'Предложить цену', payload: `b2b:offer:${requestId}` }]])
+  return keyboard([[{ type: 'callback', text: 'предложить цену', payload: `b2b:offer:${requestId}` }]])
 }
 
 /** Уведомляет компании с подходящим ОКВЭД и известным MAX user_id о новой заявке. Возвращает число уведомлённых. */

@@ -5,8 +5,10 @@ import { benefits, PROMO_BADGES } from './benefits.js'
 import { clearSession } from './chatSessions.js'
 import { lookupCompanyByInn } from './dadata.js'
 import { DEMO_INNS, brandName } from './demoBrand.js'
+import { getDemoNotifications } from './demoNotifications.js'
 import { getDemoProfile } from './demoProfiles.js'
-import { answerCallback, api, chooseApiBase, extractSender, keyboard, sendTo } from './max.js'
+import { answerCallback, api, chooseApiBase, extractSender, keyboard, sendMessage, sendTo } from './max.js'
+import { recommendOpportunities } from './recommend.js'
 import { startServer } from './server.js'
 
 // Реальной авторизации (Госуслуги) в проекте нет — ни в боте, ни в мини-аппе
@@ -33,28 +35,28 @@ async function demoLabel(inn) {
 }
 
 /** Номер меры поддержки (1..6) — кнопка открывает её подробное описание
- *  (см. payload benefit:<id> в handleCallback). Цифрой, а не эмодзи —
- *  эмодзи на кнопках договорились не использовать нигде. */
+ *  (см. payload benefit:<id> в handleCallback). Эмодзи-цифрой, как и везде
+ *  на кнопках с числами (см. numberEmoji). */
 function benefitNumberRow() {
   return benefits.map((benefit, index) => ({
     type: 'callback',
-    text: String(index + 1),
+    text: numberEmoji(index + 1),
     payload: `benefit:${benefit.id}`,
   }))
 }
 
 /** Главный экран после привязки компании (демо) — каталог мер поддержки
- *  прямо тут же (не за отдельной кнопкой, см. companyText), плюс переход в
- *  B2B-сеть, профиль и уведомления. До привязки этой клавиатуры нет —
+ *  прямо тут же (не за отдельной кнопкой, см. companyText), плюс переход к
+ *  партнёрам, профилю и уведомлениям. До привязки этой клавиатуры нет —
  *  сначала нужно выбрать демо-компанию (см. authMenu). */
 function mainMenu(userId) {
   const linked = userId ? getCompanyByUserId(userId) : null
   if (!linked) return undefined
   return keyboard([
     benefitNumberRow(),
-    [{ type: 'callback', text: 'B2B-сеть', payload: 'menu:b2b' }],
-    [{ type: 'callback', text: 'Профиль', payload: 'menu:profile' }],
-    [{ type: 'callback', text: 'Уведомления', payload: 'menu:notifications' }],
+    [{ type: 'callback', text: 'партнёры рядом', payload: 'menu:b2b' }],
+    [{ type: 'callback', text: 'профиль', payload: 'menu:profile' }],
+    [{ type: 'callback', text: 'уведомления', payload: 'menu:notifications' }],
   ])
 }
 
@@ -83,17 +85,18 @@ function landingText(userId, name) {
 function startText(name) {
   const who = name ? `, ${name}` : ''
   return [
-    `Привет${who}! Я Мера — AI-агент господдержки и B2B-сети для бизнеса.`,
+    `Привет${who}! Я Мера — ИИI-агент господдержки и партнёрской сети для бизнеса.`,
     '',
     'Профиль подтверждён через Госуслуги — нашли компании, которыми вы владеете:',
   ].join('\n')
 }
 
-/** Число полученных предложений по своим B2B-заявкам — тот же смысл, что
- *  и у пустой плашки "нет уведомлений" в мини-аппе (ChooseModePage.tsx),
- *  только не заглушка, а реальный счётчик, раз данные уже под рукой. */
+/** Число полученных предложений по своим заявкам плюс демо-уведомления
+ *  (см. demoNotifications.js) — тот же смысл, что и у плашки уведомлений в
+ *  мини-аппе (ChooseModePage.tsx). */
 function notificationsCount(inn, ownerUserId) {
-  return listMyRequests(inn, ownerUserId).reduce((sum, request) => sum + request.offers.length, 0)
+  const realCount = listMyRequests(inn, ownerUserId).reduce((sum, request) => sum + request.offers.length, 0)
+  return realCount + getDemoNotifications(inn).length
 }
 
 /** 1️⃣2️⃣… — юникодная "клавиша с цифрой", той же цифрой, что и у кнопки под
@@ -143,11 +146,11 @@ function profileMenu(linked) {
   const demo = getDemoProfile(linked.inn)
   const rows = []
   const quickRow = []
-  if (demo?.reviews.length) quickRow.push({ type: 'callback', text: 'Отзывы', payload: 'profile:reviews' })
-  quickRow.push({ type: 'callback', text: 'Заявки', payload: 'b2b:my' })
+  if (demo?.reviews.length) quickRow.push({ type: 'callback', text: 'отзывы', payload: 'profile:reviews' })
+  quickRow.push({ type: 'callback', text: 'заявки', payload: 'b2b:my' })
   rows.push(quickRow)
-  rows.push([{ type: 'callback', text: 'Выйти из аккаунта', payload: 'profile:logout' }])
-  rows.push([{ type: 'callback', text: 'Назад', payload: 'menu:main' }])
+  rows.push([{ type: 'callback', text: 'выйти из аккаунта', payload: 'profile:logout' }])
+  rows.push([{ type: 'callback', text: 'назад', payload: 'menu:main' }])
   return keyboard(rows)
 }
 
@@ -205,6 +208,40 @@ async function handleInn(target, inn) {
   }
 }
 
+/** Пуш с персональной рекомендацией чужой заявки (см. recommend.js) —
+ *  отдельным сообщением, после того как пользователь вышел из раздела
+ *  партнёров (см. payload b2b:exit). Молча ничего не делает, если
+ *  рекомендаций нет или отправка не удалась — это дополнение к основному
+ *  ответу, а не критичная часть флоу. */
+async function sendRecommendationPush(userId, linked) {
+  if (!userId) return
+  let recommendations
+  try {
+    recommendations = await recommendOpportunities(linked, userId)
+  } catch (error) {
+    console.error('Recommendation push failed:', error.message)
+    return
+  }
+  if (recommendations.length === 0) return
+
+  const top = recommendations[0]
+  const text = [
+    'Пока вы смотрели партнёров, мы подобрали для вас возможность:',
+    '',
+    `«${brandName(top.requesterInn, top.requesterName)}» ${top.direction === 'supply' ? 'предлагает' : 'ищет'}: ${top.item}`,
+  ].join('\n')
+
+  try {
+    await sendMessage(
+      userId,
+      text,
+      keyboard([[{ type: 'callback', text: 'предложить цену', payload: `b2b:offer:${top.id}` }]]),
+    )
+  } catch (error) {
+    console.error('Recommendation push send failed:', error.message)
+  }
+}
+
 async function handleCallback(update) {
   const payload = update.callback?.payload ?? ''
   const callbackId = update.callback.callback_id
@@ -222,6 +259,17 @@ async function handleCallback(update) {
       return
     }
     await answerCallback(callbackId, companyText(linked), mainMenu(userId))
+    return
+  }
+  if (payload === 'b2b:exit') {
+    if (userId) clearSession(userId)
+    const linked = userId ? getCompanyByUserId(userId) : null
+    if (!linked) {
+      await answerCallback(callbackId, GOSUSLUGI_NOTICE_TEXT, await authMenu())
+      return
+    }
+    await answerCallback(callbackId, companyText(linked), mainMenu(userId))
+    await sendRecommendationPush(userId, linked)
     return
   }
   if (payload === 'menu:b2b') {
@@ -242,7 +290,7 @@ async function handleCallback(update) {
     await answerCallback(
       callbackId,
       benefitDetailText(benefits[index], index),
-      keyboard([[{ type: 'callback', text: 'Назад', payload: 'menu:main' }]]),
+      keyboard([[{ type: 'callback', text: 'назад', payload: 'menu:main' }]]),
     )
     return
   }
@@ -252,10 +300,11 @@ async function handleCallback(update) {
       await answerCallback(callbackId, GOSUSLUGI_NOTICE_TEXT, await authMenu())
       return
     }
+    const demoNotifications = getDemoNotifications(linked.inn)
     await answerCallback(
       callbackId,
-      'Ожидается разработка',
-      keyboard([[{ type: 'callback', text: 'Назад', payload: 'menu:main' }]]),
+      demoNotifications.length > 0 ? demoNotifications.join('\n') : 'Ожидается разработка',
+      keyboard([[{ type: 'callback', text: 'назад', payload: 'menu:main' }]]),
     )
     return
   }
@@ -277,7 +326,7 @@ async function handleCallback(update) {
     await answerCallback(
       callbackId,
       reviewsText(linked),
-      keyboard([[{ type: 'callback', text: 'Назад', payload: 'menu:profile' }]]),
+      keyboard([[{ type: 'callback', text: 'назад', payload: 'menu:profile' }]]),
     )
     return
   }

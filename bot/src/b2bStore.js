@@ -8,11 +8,14 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const DATA_PATH = resolve(__dirname, '../data/b2b.json')
 
 // Сид-заявки видны в ленте "Возможности" наравне с настоящими, чтобы сеть
-// не выглядела пустой на защите — requesterInn у них нет, поэтому на карте
-// они не показываются (координаты знаем только для реальных ИНН), только
-// в списке заявок в мини-аппе. Тематика — кондитерские, кофейни, пекарни,
-// кейтеринг: тот же кулинарный мир, что у демо-аккаунтов "ВКУСНЫЙ КЕЙК" и
-// "КОФЕ ТОЧКА", чтобы сеть выглядела цельной, а не набором случайных фирм.
+// не выглядела пустой на защите — requesterInn у них нет (это не реальные
+// компании), но координаты у них есть, вымышленные, но правдоподобные точки
+// в Москве — той же "фейковой, но с координатами" природы, что и
+// FAKE_NEARBY_REQUESTS в miniapp/src/pages/MapPage.tsx — иначе у них не было
+// бы точки на карте и кнопка "перейти" из рекомендаций для них не работала
+// бы. Тематика — кондитерские, кофейни, пекарни, кейтеринг: тот же
+// кулинарный мир, что у демо-аккаунтов "ВКУСНЫЙ КЕЙК" и "КОФЕ ТОЧКА", чтобы
+// сеть выглядела цельной, а не набором случайных фирм.
 const DEMO_REQUESTS = [
   {
     requesterName: 'Кофейня «Дом Помол»',
@@ -22,6 +25,8 @@ const DEMO_REQUESTS = [
     deadline: null,
     budget: 180_000,
     notes: 'ищем обжарщика на постоянной основе, бюджет указан в месяц',
+    lat: 55.7301,
+    lon: 37.6389,
   },
   {
     requesterName: 'Кондитерская «Пряный Пряник»',
@@ -31,6 +36,8 @@ const DEMO_REQUESTS = [
     deadline: '2026-10-01',
     budget: null,
     notes: 'нужна плотная коробка, размер под торт до 2 кг',
+    lat: 55.7558,
+    lon: 37.6176,
   },
   {
     requesterName: 'Кейтеринг «Фуршет и Ко»',
@@ -40,6 +47,8 @@ const DEMO_REQUESTS = [
     deadline: '2026-10-20',
     budget: 250_000,
     notes: 'разовое корпоративное мероприятие, нужна посуда и официанты',
+    lat: 55.7412,
+    lon: 37.5547,
   },
   {
     requesterName: 'Пекарня «Хлебный Дом»',
@@ -49,6 +58,8 @@ const DEMO_REQUESTS = [
     deadline: null,
     budget: null,
     notes: 'печём каждое утро, готовы возить по кафе и магазинам',
+    lat: 55.7185,
+    lon: 37.6009,
   },
   {
     requesterName: 'Кафе «Утренний Круассан»',
@@ -58,6 +69,8 @@ const DEMO_REQUESTS = [
     deadline: '2026-11-05',
     budget: 60_000,
     notes: 'важна стабильная жирность, готовы к дегустации перед контрактом',
+    lat: 55.7622,
+    lon: 37.6455,
   },
   {
     requesterName: 'Кофейня «Зёрна и Точка»',
@@ -67,6 +80,8 @@ const DEMO_REQUESTS = [
     deadline: null,
     budget: null,
     notes: 'своё производство, цена ниже рыночной при заказе от 150 л',
+    lat: 55.7069,
+    lon: 37.5872,
   },
   {
     requesterName: 'Кондитерская «Три Эклера»',
@@ -76,6 +91,8 @@ const DEMO_REQUESTS = [
     deadline: '2026-10-15',
     budget: 45_000,
     notes: 'нужна ягода без вмятин, доставка два раза в неделю',
+    lat: 55.7345,
+    lon: 37.5701,
   },
   {
     requesterName: 'Ресторан «Тёплый Хлеб»',
@@ -85,6 +102,8 @@ const DEMO_REQUESTS = [
     deadline: null,
     budget: 35_000,
     notes: 'бюджет в месяц, важно обслуживание и запчасти в комплекте',
+    lat: 55.7501,
+    lon: 37.6301,
   },
 ]
 
@@ -137,6 +156,15 @@ function migrate(loaded) {
         ? Object.entries(loaded.testers).find(([, t]) => t.inn === request.requesterInn)
         : null
       request.ownerUserId = owner ? Number(owner[0]) : null
+    }
+    // Сид-заявки, сохранённые до появления координат — задним числом
+    // находим совпадение по имени в DEMO_REQUESTS и проставляем lat/lon,
+    // иначе на карте у них по-прежнему не будет точки (см. комментарий у
+    // DEMO_REQUESTS).
+    if (request.isDemo && request.lat === undefined) {
+      const seed = DEMO_REQUESTS.find((item) => item.requesterName === request.requesterName)
+      request.lat = seed?.lat ?? null
+      request.lon = seed?.lon ?? null
     }
   }
   return loaded

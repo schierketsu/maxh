@@ -22,15 +22,20 @@ import { answerCallback, extractSender, keyboard, sendTo } from './max.js'
 const PAGE_SIZE = 5
 
 function backRow(payload = 'menu:b2b') {
-  return [{ type: 'callback', text: 'Назад', payload }]
+  return [{ type: 'callback', text: 'назад', payload }]
 }
 
 function b2bMenu() {
   return keyboard([
-    [{ type: 'callback', text: 'Мне что-то нужно', payload: 'b2b:new' }],
-    [{ type: 'callback', text: 'Мои заявки', payload: 'b2b:my' }],
-    [{ type: 'callback', text: 'Возможности', payload: 'b2b:opps' }],
-    [{ type: 'callback', text: 'Главное меню', payload: 'menu:main' }],
+    [{ type: 'callback', text: 'мне что-то нужно', payload: 'b2b:new' }],
+    [{ type: 'callback', text: 'мои заявки', payload: 'b2b:my' }],
+    [{ type: 'callback', text: 'заявки рядом', payload: 'b2b:opps' }],
+    // Отдельный payload (не menu:main) — чтобы index.js мог отличить именно
+    // выход из раздела партнёров и следом прислать пуш с рекомендацией (см.
+    // sendRecommendationPush в index.js), а не при любом "назад" в приложении.
+    // Смайлик вместо текста — функционально это тоже "назад", просто из
+    // самого верхнего уровня раздела.
+    [{ type: 'callback', text: '⬅️', payload: 'b2b:exit' }],
   ])
 }
 
@@ -55,7 +60,7 @@ function notLinkedText() {
   return 'Сначала выберите демо-компанию — команда /demo.'
 }
 
-/** Вход в B2B-сеть — и с главного меню, и как "назад" из под-экранов. */
+/** Вход в раздел партнёров — и с главного меню, и как "назад" из под-экранов. */
 export async function handleB2BEntry(update) {
   const callback = update.callback
   const { userId } = extractSender(update)
@@ -71,7 +76,7 @@ export async function handleB2BEntry(update) {
   }
 
   if (userId) clearSession(userId)
-  const text = `B2B-сеть — ${brandName(linked.inn, linked.name)}.\nЧто хотите сделать?`
+  const text = `Партнёры рядом — ${brandName(linked.inn, linked.name)}.\nЧто хотите сделать?`
   if (callback) {
     await answerCallback(callback.callback_id, text, b2bMenu())
   } else {
@@ -132,10 +137,10 @@ async function showRequestManage(callbackId, linked, id) {
     [
       {
         type: 'callback',
-        text: request.status === 'active' ? 'Деактивировать' : 'Активировать',
+        text: request.status === 'active' ? 'деактивировать' : 'активировать',
         payload: `b2b:my:toggle:${id}`,
       },
-      { type: 'callback', text: 'Удалить', payload: `b2b:my:delete:${id}` },
+      { type: 'callback', text: 'удалить', payload: `b2b:my:delete:${id}` },
     ],
     backRow('b2b:my'),
   ]
@@ -151,10 +156,10 @@ async function showOpportunities(callbackId, linked) {
   const shown = opportunities.slice(0, PAGE_SIZE)
   const lines = shown.map((r, i) => `${requestLine(i + 1, r)}\n   ${brandName(r.requesterInn, r.requesterName)}`)
   const rows = shown.map((r, i) => [
-    { type: 'callback', text: `${i + 1}. Предложить цену`, payload: `b2b:offer:${r.id}` },
+    { type: 'callback', text: `${numberEmoji(i + 1)} связаться`, payload: `b2b:offer:${r.id}` },
   ])
   rows.push(backRow())
-  await answerCallback(callbackId, ['Возможности:', '', ...lines].join('\n'), keyboard(rows))
+  await answerCallback(callbackId, ['Заявки рядом:', '', ...lines].join('\n'), keyboard(rows))
 }
 
 export async function handleB2BCallback(update, payload) {
@@ -219,7 +224,7 @@ export async function handleB2BCallback(update, payload) {
       'Заявка создана.',
       notified > 0
         ? `Уведомили ${notified} подходящих компаний в MAX.`
-        : 'Подходящих компаний с известным MAX-аккаунтом пока не нашлось — заявка всё равно видна в «Возможностях».',
+        : 'Подходящих компаний с известным MAX-аккаунтом пока не нашлось — заявка всё равно видна в «Заявках рядом».',
     ].join('\n')
     await answerCallback(callbackId, text, b2bMenu())
     return
@@ -271,8 +276,8 @@ export async function handleB2BCallback(update, payload) {
       'Удалить заявку без возможности восстановления?',
       keyboard([
         [
-          { type: 'callback', text: 'Да, удалить', payload: `b2b:my:delete:confirm:${id}` },
-          { type: 'callback', text: 'Отмена', payload: `b2b:my:manage:${id}` },
+          { type: 'callback', text: 'да, удалить', payload: `b2b:my:delete:confirm:${id}` },
+          { type: 'callback', text: 'отмена', payload: `b2b:my:manage:${id}` },
         ],
       ]),
     )
@@ -351,8 +356,8 @@ export async function handleB2BText(update, text) {
       update,
       lines.join('\n'),
       keyboard([
-        [{ type: 'callback', text: 'Создать заявку', payload: 'b2b:new:confirm' }],
-        [{ type: 'callback', text: 'Ввести заново', payload: 'b2b:new:retry' }],
+        [{ type: 'callback', text: 'создать заявку', payload: 'b2b:new:confirm' }],
+        [{ type: 'callback', text: 'ввести заново', payload: 'b2b:new:retry' }],
         backRow(),
       ]),
     )

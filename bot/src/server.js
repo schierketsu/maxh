@@ -15,6 +15,7 @@ import {
 import { notifyNewRequest, notifyOfferSubmitted } from './b2bNotify.js'
 import { lookupCompanyByInn, lookupCompanyDetailsByInn } from './dadata.js'
 import { extractRequest } from './llm.js'
+import { recommendOpportunities } from './recommend.js'
 
 const CACHE_TTL_MS = 10 * 60 * 1000
 const cache = new Map()
@@ -335,6 +336,24 @@ export function startServer(port = process.env.PORT ?? 3001) {
         return
       }
       sendJson(res, 200, { requests: listMyRequests(inn, userId) })
+      return
+    }
+
+    if (req.method === 'GET' && pathname === '/api/b2b/recommendations') {
+      const inn = String(url.searchParams.get('inn') ?? '').replace(/\D/g, '')
+      const userId = url.searchParams.get('userId')
+      const linked = inn ? getCompany(inn) : null
+      if (!linked) {
+        sendJson(res, 400, { error: 'Нужен inn' })
+        return
+      }
+      try {
+        const recommendations = await recommendOpportunities(linked, userId)
+        sendJson(res, 200, { recommendations })
+      } catch (error) {
+        console.error('Recommendations failed:', error.message)
+        sendJson(res, 502, { error: 'Не удалось получить рекомендации' })
+      }
       return
     }
 

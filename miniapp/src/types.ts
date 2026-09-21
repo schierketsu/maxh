@@ -71,6 +71,10 @@ export interface B2BRequest {
   notes: string | null
   rawText: string | null
   createdAt: string
+  /** Только у сид-заявок (isDemo) — вымышленные, но реальные координаты в
+   *  Москве, чтобы у них тоже была точка на карте (bot/src/b2bStore.js). */
+  lat?: number | null
+  lon?: number | null
 }
 
 export interface ParsedB2BRequest {

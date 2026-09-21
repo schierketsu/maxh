@@ -156,10 +156,9 @@ export function ModeSelectPage() {
         <p className="gosuslugi-verified">
           Профиль подтверждён через Госуслуги — нашли компании, которыми вы владеете
         </p>
-        {failed && <p className="empty">Не удалось связать аккаунт. Попробуйте ещё раз.</p>}
         <Button
           type="button"
-          className="gosuslugi-cta"
+          className={`gosuslugi-cta${failed ? ' inn-input--invalid' : ''}`}
           loading={loading}
           disabled={loading}
           innerClassNames={{ content: 'gosuslugi-cta__label' }}

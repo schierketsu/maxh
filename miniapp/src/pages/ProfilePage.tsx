@@ -152,7 +152,7 @@ export function ProfilePage() {
   return (
     <>
       <button type="button" className="company-details__logout" onClick={clearCompany}>
-        выйти из аккаунта
+        выйти
       </button>
 
       <div className="company-details">
@@ -213,6 +213,16 @@ export function ProfilePage() {
                     alt=""
                   />
                   заявки
+                </button>
+              </div>
+
+              <div className="company-details__quick-row">
+                <button
+                  type="button"
+                  className="company-details__notifications-cta"
+                  onClick={() => navigate('/notifications')}
+                >
+                  уведомления
                 </button>
               </div>
             </div>

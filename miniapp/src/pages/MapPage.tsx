@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useCompany } from '../context/CompanyContext'
 import { fetchCompanyDetails } from '../lib/companyApi'
-import { fetchOpportunities } from '../lib/b2bApi'
+import { fetchOpportunities, fetchRecommendations } from '../lib/b2bApi'
 import { brandCompanyName } from '../lib/demoBranding'
 import { getMaxUserId } from '../lib/maxBridge'
 import { loadYandexMaps, type YMapInstance } from '../lib/yandexMaps'
 import { addContactedRequest, getContactedRequests, removeContactedRequest } from '../lib/contactedRequests'
 import mapCustomization from '../assets/customization.json'
+import type { B2BRequest } from '../types'
 
 type Status = 'loading' | 'ready' | 'no-location' | 'error'
 type RequestDirection = 'demand' | 'supply'
@@ -34,28 +35,29 @@ const FAKE_NEARBY_REQUESTS: MapPin[] = [
   { id: 'kuzmin-catering', name: 'ИП Кузьмин — кейтеринг', direction: 'demand', need: 'нужно 15 кг десертов ассорти на корпоратив на 20 человек, готовы на бартер кейтеринг-услугами', deadline: 'до 18 сентября', lat: 55.7398, lon: 37.5701 },
 ]
 
-/** Настоящие заявки не хранят координаты — геокодируем по ИНН заявителя
- *  через тот же /api/company/:inn/details, что и для своей компании.
- *  У сид-демо-заявок requesterInn === null, координат для них нет — пропускаем. */
+/** Сид-демо-заявки несут собственные (вымышленные, но реальные) координаты
+ *  прямо в данных (bot/src/b2bStore.js) — используем их напрямую. Настоящие
+ *  заявки координат не хранят, геокодируем по ИНН заявителя через тот же
+ *  /api/company/:inn/details, что и для своей компании. */
 async function geocodeOpportunities(inn: string): Promise<MapPin[]> {
   const opportunities = await fetchOpportunities(inn, getMaxUserId()).catch(() => [])
   const withCoords = await Promise.all(
-    opportunities
-      .filter((request) => request.requesterInn)
-      .map(async (request) => {
-        const details = await fetchCompanyDetails(request.requesterInn as string).catch(() => null)
-        if (!details?.lat || !details?.lon) return null
-        const pin: MapPin = {
-          id: request.id,
-          name: brandCompanyName(request.requesterInn, request.requesterName),
-          direction: request.direction,
-          need: request.qty ? `${request.item}, ${request.qty}` : request.item,
-          deadline: request.deadline ?? 'срок не указан',
-          lat: details.lat,
-          lon: details.lon,
-        }
-        return pin
-      }),
+    opportunities.map(async (request): Promise<MapPin | null> => {
+      const base = {
+        id: request.id,
+        name: brandCompanyName(request.requesterInn, request.requesterName),
+        direction: request.direction,
+        need: request.qty ? `${request.item}, ${request.qty}` : request.item,
+        deadline: request.deadline ?? 'срок не указан',
+      }
+      if (request.lat != null && request.lon != null) {
+        return { ...base, lat: request.lat, lon: request.lon }
+      }
+      if (!request.requesterInn) return null
+      const details = await fetchCompanyDetails(request.requesterInn).catch(() => null)
+      if (!details?.lat || !details?.lon) return null
+      return { ...base, lat: details.lat, lon: details.lon }
+    }),
   )
   return withCoords.filter((pin): pin is MapPin => pin !== null)
 }
@@ -66,9 +68,20 @@ export function MapPage() {
   const [status, setStatus] = useState<Status>('loading')
   const [selected, setSelected] = useState<MapPin | null>(null)
   const [contactedIds, setContactedIds] = useState<Set<string>>(new Set())
+  const [recommendations, setRecommendations] = useState<B2BRequest[]>([])
+  const [recommendationsOpen, setRecommendationsOpen] = useState(true)
+  const [mapPoints, setMapPoints] = useState<MapPin[]>([])
+  const mapInstanceRef = useRef<YMapInstance | null>(null)
 
   useEffect(() => {
     setContactedIds(company ? new Set(getContactedRequests(company.inn).map((r) => r.id)) : new Set())
+  }, [company])
+
+  useEffect(() => {
+    if (!company) return
+    fetchRecommendations(company.inn, getMaxUserId())
+      .then(setRecommendations)
+      .catch(() => setRecommendations([]))
   }, [company])
 
   useEffect(() => {
@@ -104,6 +117,7 @@ export function MapPage() {
         // v3 использует порядок [долгота, широта], в отличие от [широта, долгота] у DaData.
         const coords: [number, number] = [details.lon, details.lat]
         const allPoints = [...FAKE_NEARBY_REQUESTS, ...realPins]
+        setMapPoints(allPoints)
 
         // Реальные заявки геокодируются по настоящему адресу компании в
         // DaData — те могут оказаться в нескольких км от своей компании (в
@@ -123,6 +137,7 @@ export function MapPage() {
           location: { bounds },
           mode: 'vector',
         })
+        mapInstanceRef.current = map
         map.addChild(new ymaps3.YMapDefaultSchemeLayer({ customization: mapCustomization }))
         // YMapDefaultFeaturesLayer обязателен — это слой, к которому вообще
         // крепятся любые метки (включая нашу собственную), а не только
@@ -165,9 +180,30 @@ export function MapPage() {
     return () => {
       cancelled = true
       map?.destroy()
+      mapInstanceRef.current = null
+      setMapPoints([])
       setSelected(null)
     }
   }, [company])
+
+  /** "перейти" в панели рекомендаций — то же самое, что клик по метке этой
+   *  заявки на карте (см. addEventListener в init() выше): закрывает саму
+   *  панель рекомендаций, выделяет заявку и приближает к ней карту. Точка
+   *  есть почти всегда (сид-заявки несут свои координаты, см.
+   *  geocodeOpportunities) — но если её всё же нет (не удалось
+   *  геокодировать реальный адрес), панель всё равно закрывается. */
+  const goToRecommendation = (request: B2BRequest) => {
+    setRecommendationsOpen(false)
+    const pin = mapPoints.find((point) => point.id === request.id)
+    if (!pin || !mapInstanceRef.current) return
+    setSelected(pin)
+    mapInstanceRef.current.setLocation({
+      center: [pin.lon, pin.lat],
+      zoom: 16,
+      duration: 600,
+      easing: 'ease-in-out',
+    })
+  }
 
   if (!company) {
     return <Navigate to="/" replace />
@@ -202,6 +238,33 @@ export function MapPage() {
       {status === 'no-location' && <p className="empty">Не удалось определить адрес компании.</p>}
       {status === 'error' && <p className="empty">Не удалось загрузить карту.</p>}
       <div ref={mapRef} className="map-page__canvas" />
+
+      {recommendations.length > 0 && recommendationsOpen && (
+        <div className="map-toppanel">
+          <button
+            type="button"
+            className="map-popup__close"
+            aria-label="Закрыть"
+            onClick={() => setRecommendationsOpen(false)}
+          >
+            ✕
+          </button>
+          <p className="map-toppanel__title">Рекомендуем для вас</p>
+          <div className="map-toppanel__item">
+            <span className="map-toppanel__item-name">
+              {brandCompanyName(recommendations[0].requesterInn, recommendations[0].requesterName)}
+            </span>
+            <span className="map-toppanel__item-need">{recommendations[0].item}</span>
+          </div>
+          <button
+            type="button"
+            className="map-toppanel__cta"
+            onClick={() => goToRecommendation(recommendations[0])}
+          >
+            перейти
+          </button>
+        </div>
+      )}
 
       {selected && (
         <div className="map-popup">

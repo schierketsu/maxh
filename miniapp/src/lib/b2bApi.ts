@@ -36,6 +36,15 @@ export async function fetchMyRequests(inn: string, userId?: number | null): Prom
   return data.requests
 }
 
+/** Персональные рекомендации чужих заявок — эмбеддинги профиля/истории/
+ *  отзывов компании против эмбеддингов открытых заявок + реранкер
+ *  (bot/src/recommend.js). */
+export async function fetchRecommendations(inn: string, userId?: number | null): Promise<B2BRequest[]> {
+  const res = await fetch(`${API_BASE}/api/b2b/recommendations?inn=${inn}${userIdParam(userId)}`)
+  const data = await handle<{ recommendations: B2BRequest[] }>(res)
+  return data.recommendations
+}
+
 export async function fetchRequest(id: string): Promise<B2BRequest> {
   const res = await fetch(`${API_BASE}/api/b2b/requests/${id}`)
   const data = await handle<{ request: B2BRequest }>(res)

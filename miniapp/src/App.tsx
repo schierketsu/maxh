@@ -11,6 +11,7 @@ import { ChooseModePage } from './pages/ChooseModePage'
 import { DashboardPage } from './pages/DashboardPage'
 import { MapPage } from './pages/MapPage'
 import { ModeSelectPage } from './pages/ModeSelectPage'
+import { NotificationsPage } from './pages/NotificationsPage'
 import { ProfilePage } from './pages/ProfilePage'
 
 const NO_TOOLBAR_PATHS = ['/', '/gov/dashboard']
@@ -26,6 +27,7 @@ function AppRoutes() {
         <Route path="/modes" element={<ChooseModePage />} />
         <Route path="/map" element={<MapPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
 
         <Route
           path="/gov"

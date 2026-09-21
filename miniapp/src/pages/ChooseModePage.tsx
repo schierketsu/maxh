@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { BenefitCard } from '../components/BenefitCard'
 import { useCompany } from '../context/CompanyContext'
 import { benefits } from '../data/benefits'
+import { getDemoNotifications } from '../data/demoNotifications'
 import govImage from '../assets/гос.png'
 
 const BENEFITS_PAGE_SIZE = 2
@@ -16,9 +17,20 @@ export function ChooseModePage() {
     return <Navigate to="/" replace />
   }
 
+  const notifications = getDemoNotifications(company.inn)
+
   return (
     <div className="page onboarding choose-mode">
-      <div className="notice-tile">нет уведомлений</div>
+      {notifications.length > 0 ? (
+        <button type="button" className="notice-tile notice-tile--compact" onClick={() => navigate('/notifications')}>
+          новое уведомление
+          <svg className="notice-tile__dot" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+            <circle cx="5" cy="5" r="5" fill="var(--red)" />
+          </svg>
+        </button>
+      ) : (
+        <div className="notice-tile notice-tile--compact">нет уведомлений</div>
+      )}
       <button
         type="button"
         className="notice-tile notice-tile--gap-before notice-tile--image"
