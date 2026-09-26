@@ -7,7 +7,10 @@ import './index.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MaxUI>
+    {/* Тема всегда светлая: макеты нарисованы под неё, а при системной
+        тёмной @maxhub/max-ui переключал бы свои компоненты, и они
+        разъезжались бы с нашими собственными стилями. */}
+    <MaxUI colorScheme="light">
       <App />
     </MaxUI>
   </StrictMode>,

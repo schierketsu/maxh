@@ -76,7 +76,7 @@ export async function handleB2BEntry(update) {
   }
 
   if (userId) clearSession(userId)
-  const text = `Партнёры рядом — ${brandName(linked.inn, linked.name)}.\nЧто хотите сделать?`
+  const text = `Партнёры рядом — **${brandName(linked.inn, linked.name)}**.\nЧто хотите сделать?`
   if (callback) {
     await answerCallback(callback.callback_id, text, b2bMenu())
   } else {
@@ -127,7 +127,7 @@ async function showRequestManage(callbackId, linked, id) {
     for (const offer of offers) {
       const price = offer.price ? ` — ${formatMoney(offer.price)}` : ''
       const terms = offer.terms ? ` (${offer.terms})` : ''
-      lines.push(`• ${brandName(offer.supplierInn, offer.supplierName)}${price}${terms}`)
+      lines.push(`• **${brandName(offer.supplierInn, offer.supplierName)}**${price}${terms}`)
     }
   } else {
     lines.push('', 'Предложений пока нет.')
@@ -154,7 +154,7 @@ async function showOpportunities(callbackId, linked) {
     return
   }
   const shown = opportunities.slice(0, PAGE_SIZE)
-  const lines = shown.map((r, i) => `${requestLine(i + 1, r)}\n   ${brandName(r.requesterInn, r.requesterName)}`)
+  const lines = shown.map((r, i) => `${requestLine(i + 1, r)}\n   **${brandName(r.requesterInn, r.requesterName)}**`)
   const rows = shown.map((r, i) => [
     { type: 'callback', text: `${numberEmoji(i + 1)} связаться`, payload: `b2b:offer:${r.id}` },
   ])

@@ -1,4 +1,13 @@
 :root {
+  /* Мини-апп всегда в светлой теме, независимо от системной: это запрещает
+     движку инвертировать цвета форм, скроллбаров и подложек. */
+  color-scheme: light;
+  /* В браузере отступы под вырез/домашнюю полоску нужны, а внутри MAX —
+     нет: мини-апп открывается под собственным хедером мессенджера, который
+     эти зоны уже учёл, и env() добавлял бы их второй раз (отсюда пустые
+     полосы сверху и снизу). Класс in-max ставит maxBridge.initMaxBridge(). */
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
   --family-base: 'Styrene A LC', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --family-headers: var(--family-base);
   --family-brand: var(--family-base);
@@ -18,7 +27,7 @@
   --palette-red: #ef3124;
   --palette-pink: #fe34c6;
   --palette-gray-light: #ebebeb;
-  --home-toolbar-space: calc(50px + env(safe-area-inset-bottom));
+  --home-toolbar-space: calc(50px + var(--safe-bottom));
   font-family: var(--family-base);
   color: var(--ink);
   background: #f2f2f7;
@@ -66,9 +75,14 @@
   font-display: swap;
 }
 
+html.in-max {
+  --safe-top: 0px;
+  --safe-bottom: 0px;
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 html, body, #root { min-height: 100%; }
-body { margin: 0; background: #f2f2f7; -webkit-font-smoothing: antialiased; }
+body { margin: 0; background: #f2f2f7; color: var(--ink); -webkit-font-smoothing: antialiased; }
 button, input, select, textarea { font: inherit; }
 
 .MaxUI__g7Q {
@@ -111,7 +125,7 @@ button, input, select, textarea { font: inherit; }
   width: min(100%, 600px);
   min-height: 100dvh;
   margin: 0 auto;
-  padding: 18px clamp(16px, 4vw, 24px) calc(32px + env(safe-area-inset-bottom));
+  padding: 18px clamp(16px, 4vw, 24px) calc(32px + var(--safe-bottom));
 }
 
 .page { display: flex; flex-direction: column; gap: 22px; }
@@ -120,12 +134,47 @@ button, input, select, textarea { font: inherit; }
   padding-bottom: 110px;
   /* Без min-height у .page (flex-контейнера) нечего распределять между
      flex:1 детьми — плитки сжимались до 0 и были невидимы. */
-  min-height: calc(100dvh - 18px - 32px - env(safe-area-inset-bottom));
+  min-height: calc(100dvh - 18px - 32px - var(--safe-bottom));
 }
 /* .gosuslugi-bar — position:fixed, её собственный отступ до края экрана
    (padding-bottom: 26px + safe-area) не зависит от этого значения — здесь
    только резерв места в потоке, чтобы содержимое не заезжало под неё. */
 .onboarding.mode-select-page { position: relative; z-index: 0; padding-bottom: 40px; }
+/* Автовход по привязке из чат-бота: вместо формы входа — аватар выбранной
+   компании, её название и приветствие. В отличие от экрана входа фон здесь
+   обычный светлый, как на остальных страницах, а надписи — синие. */
+.welcome-screen {
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding-bottom: 0;
+  text-align: center;
+}
+/* Гасим синюю заливку, которую .mode-select-page::before кладёт на весь экран. */
+.mode-select-page.welcome-screen::before { background: var(--sky); }
+.account-avatar.welcome-screen__avatar {
+  width: clamp(120px, 34vw, 160px);
+  height: clamp(120px, 34vw, 160px);
+}
+.welcome-screen__avatar .account-avatar__icon,
+.welcome-screen__avatar .account-avatar__icon--coffee {
+  width: 62%;
+  height: 62%;
+}
+.welcome-screen__company {
+  margin: 20px 0 0;
+  color: var(--ink);
+  font-size: clamp(22px, 6.5vw, 30px);
+  font-weight: 700;
+  line-height: 1.15;
+}
+.welcome-screen__greeting {
+  margin: 14px 0 0;
+  color: var(--ink);
+  font-size: clamp(17px, 4.6vw, 22px);
+  font-weight: 600;
+  line-height: 1.3;
+}
 /* Фон всего экрана авторизации синий — вместо отдельного синего "баннера"
    у верхней плитки. position:fixed не завязан на паддинги .app-shell и
    покрывает экран целиком, не сдвигая при этом ни один элемент в потоке. */
@@ -212,7 +261,7 @@ button, input, select, textarea { font: inherit; }
 }
 .account-switcher {
   position: fixed;
-  top: calc(18px + env(safe-area-inset-top));
+  top: calc(18px + var(--safe-top));
   right: clamp(16px, 4vw, 24px);
   z-index: 60;
 }
@@ -225,12 +274,14 @@ button, input, select, textarea { font: inherit; }
   cursor: pointer;
 }
 .account-switcher__trigger--text {
+  display: grid;
   align-items: center;
-  justify-content: center;
+  justify-items: center;
   height: auto;
-  /* Фиксированная минимальная ширина — текст переключается между "сменить
-     аккаунт" и "скрыть" (короче), без неё кнопка (а с ней и .account-switcher__menu,
-     который равен ей по ширине) дёргалась бы при открытии/закрытии меню. */
+  /* Ширину держит невидимая распорка .account-switcher__trigger-sizer: текст
+     переключается между "сменить аккаунт" и "скрыть" (короче), а кнопка (и
+     .account-switcher__menu, который равен ей по ширине) остаётся одной ширины.
+     min-width — нижняя граница на случай мелкого шрифта. */
   min-width: 190px;
   padding: 16px 20px;
   line-height: 1;
@@ -243,6 +294,12 @@ button, input, select, textarea { font: inherit; }
   box-shadow: none;
 }
 .account-switcher__trigger--text.is-open { border-radius: 14px 14px 0 0; }
+.account-switcher__trigger-label,
+.account-switcher__trigger-sizer { grid-area: 1 / 1; }
+.account-switcher__trigger-sizer {
+  visibility: hidden;
+  pointer-events: none;
+}
 .account-switcher__backdrop {
   position: fixed;
   inset: 0;
@@ -300,16 +357,16 @@ button, input, select, textarea { font: inherit; }
      32px+safe-area) в обычном потоке — в отличие от .company-reviews-list
      (position:fixed; inset:0). Снизу свой отступ не нужен, он бы удвоил
      отступ app-shell; сверху добавляем только разницу, а не полные 72px. */
-  padding-top: calc(54px + env(safe-area-inset-top));
+  padding-top: calc(54px + var(--safe-top));
 }
 .b2b-home, .b2b-my-requests, .b2b-new-request, .b2b-offer { padding-bottom: var(--home-toolbar-space); }
-.notifications-page { padding-top: calc(54px + env(safe-area-inset-top)); padding-bottom: var(--home-toolbar-space); }
-.b2b-new-request--confirm { padding-top: calc(54px + env(safe-area-inset-top)); }
+.notifications-page { padding-top: calc(54px + var(--safe-top)); padding-bottom: var(--home-toolbar-space); }
+.b2b-new-request--confirm { padding-top: calc(54px + var(--safe-top)); }
 
 .b2b-new-request--done {
   display: flex;
   flex-direction: column;
-  min-height: calc(100dvh - 18px - 32px - env(safe-area-inset-bottom));
+  min-height: calc(100dvh - 18px - 32px - var(--safe-bottom));
 }
 .b2b-done__notice {
   margin: 0;
@@ -392,7 +449,7 @@ button, input, select, textarea { font: inherit; }
   gap: 10px;
   max-width: 600px;
   margin: 0 auto;
-  padding: 16px clamp(16px, 4vw, 24px) calc(26px + env(safe-area-inset-bottom));
+  padding: 16px clamp(16px, 4vw, 24px) calc(26px + var(--safe-bottom));
   background: #f2f2f7;
 }
 /* Панель на экране авторизации не должна перекрывать облако тегов позади
@@ -443,7 +500,7 @@ button, input, select, textarea { font: inherit; }
 }
 .company-details__close {
   position: fixed;
-  top: calc(18px + env(safe-area-inset-top));
+  top: calc(18px + var(--safe-top));
   right: clamp(16px, 4vw, 24px);
   z-index: 150;
   display: flex;
@@ -459,10 +516,10 @@ button, input, select, textarea { font: inherit; }
   cursor: pointer;
 }
 .company-details__logout {
-  position: fixed;
-  left: clamp(8px, 2vw, 12px);
-  bottom: calc(var(--home-toolbar-space) + 24px);
-  z-index: 115;
+  /* В потоке, а не position:fixed — фиксированная кнопка наезжала на
+     карточку профиля и на нижнюю панель. */
+  align-self: flex-start;
+  margin-top: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -479,9 +536,11 @@ button, input, select, textarea { font: inherit; }
   box-shadow: none;
 }
 .company-details__content {
+  display: flex;
+  flex-direction: column;
   max-width: 600px;
   margin: 0 auto;
-  padding: env(safe-area-inset-top) clamp(16px, 4vw, 24px)
+  padding: var(--safe-top) clamp(16px, 4vw, 24px)
     calc(32px + var(--home-toolbar-space));
 }
 
@@ -587,14 +646,18 @@ button, input, select, textarea { font: inherit; }
 }
 .company-details__quick-tile-icon {
   position: absolute;
-  top: 50%;
+  /* Центр иконки выше середины плитки: при 50% и фиксированных 124px она
+     наезжала на подпись внизу ("отзывы" читалась наполовину). Размер в
+     процентах от ширины плитки — иконка не перекрывает текст на любом
+     размере экрана. */
+  top: 44%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 124px;
-  height: 124px;
+  width: min(124px, 62%);
+  height: auto;
   object-fit: contain;
 }
-.company-details__quick-tile-icon--requests { width: 100px; height: 100px; }
+.company-details__quick-tile-icon--requests { width: min(100px, 52%); }
 /* В том же .company-details__quick-row, что и "отзывы"/"заявки" — тот же
    боковой отступ (row сама уже гасит паддинг карточки). По высоте вдвое
    ниже плитки отзывов/заявок (та — квадрат при ширине в половину ряда,
@@ -622,7 +685,7 @@ button, input, select, textarea { font: inherit; }
 }
 .company-reviews-list__back {
   position: fixed;
-  top: calc(18px + env(safe-area-inset-top));
+  top: calc(18px + var(--safe-top));
   left: clamp(16px, 4vw, 24px);
   z-index: 150;
   display: flex;
@@ -644,12 +707,12 @@ button, input, select, textarea { font: inherit; }
 .company-reviews-list__content {
   max-width: 600px;
   margin: 0 auto;
-  padding: calc(72px + env(safe-area-inset-top)) clamp(16px, 4vw, 24px) 0;
+  padding: calc(72px + var(--safe-top)) clamp(16px, 4vw, 24px) 0;
 }
 .reviews-summary {
   width: 100vw;
   margin-left: calc(50% - 50vw);
-  padding: 24px clamp(16px, 4vw, 24px) calc(32px + env(safe-area-inset-bottom));
+  padding: 24px clamp(16px, 4vw, 24px) calc(32px + var(--safe-bottom));
   border-radius: 24px 24px 0 0;
   background: #fff;
 }
@@ -691,7 +754,7 @@ button, input, select, textarea { font: inherit; }
 
 .choose-mode {
   gap: 10px;
-  min-height: calc(100dvh - 18px - 32px - env(safe-area-inset-bottom));
+  min-height: calc(100dvh - 18px - 32px - var(--safe-bottom));
   padding-bottom: var(--home-toolbar-space);
 }
 
@@ -764,7 +827,7 @@ button, input, select, textarea { font: inherit; }
   position: fixed;
   left: clamp(16px, 4vw, 24px);
   right: clamp(16px, 4vw, 24px);
-  top: calc(16px + env(safe-area-inset-top));
+  top: calc(16px + var(--safe-top));
   z-index: 45;
   padding: 16px 44px 20px 16px;
   border-radius: 16px;
@@ -862,7 +925,7 @@ button, input, select, textarea { font: inherit; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px clamp(16px, 4vw, 24px) calc(10px + env(safe-area-inset-bottom));
+  padding: 10px clamp(16px, 4vw, 24px) calc(10px + var(--safe-bottom));
   border-radius: 0;
   background: #fff;
 }

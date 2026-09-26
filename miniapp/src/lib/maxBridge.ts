@@ -46,6 +46,10 @@ export function getWebApp(): MaxWebApp | undefined {
 export function initMaxBridge(): void {
   const wa = getWebApp()
   if (!wa) return
+  // Внутри MAX мини-апп рендерится под хедером мессенджера, который уже
+  // отступил от выреза и домашней полоски — env(safe-area-*) добавлял бы
+  // их второй раз. Класс гасит --safe-top/--safe-bottom (см. index.css).
+  document.documentElement.classList.add('in-max')
   try {
     wa.ready?.()
   } catch {
@@ -61,4 +65,35 @@ export function isInsideMax(): boolean {
  *  null вне MAX или если Bridge ещё не успел проставить данные. */
 export function getMaxUserId(): number | null {
   return getWebApp()?.initDataUnsafe?.user?.id ?? null
+}
+
+/** Имя того, кто открыл мини-приложение — для приветствия на экране
+ *  автовхода. null вне MAX или если Bridge не передал профиль. */
+export function getMaxUserName(): string | null {
+  const user = getWebApp()?.initDataUnsafe?.user
+  const name = user?.first_name?.trim() || user?.username?.trim()
+  return name || null
+}
+
+/** Bridge заполняет initDataUnsafe асинхронно — сразу после монтирования
+ *  user_id обычно ещё null. Ждём его появления, но не дольше timeoutMs,
+ *  иначе вне MAX (обычный браузер) мы бы зависли навсегда. */
+export function waitForMaxUserId(timeoutMs = 3000): Promise<number | null> {
+  return new Promise((resolve) => {
+    const started = Date.now()
+    const tick = () => {
+      const id = getMaxUserId()
+      if (id) {
+        resolve(id)
+        return
+      }
+      // Вне MAX ждать нечего — window.WebApp там нет вовсе.
+      if (!getWebApp() || Date.now() - started >= timeoutMs) {
+        resolve(null)
+        return
+      }
+      setTimeout(tick, 100)
+    }
+    tick()
+  })
 }

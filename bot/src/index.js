@@ -4,7 +4,7 @@ import { handleB2BCallback, handleB2BEntry, handleB2BText } from './b2bChat.js'
 import { benefits, PROMO_BADGES } from './benefits.js'
 import { clearSession } from './chatSessions.js'
 import { lookupCompanyByInn } from './dadata.js'
-import { DEMO_INNS, brandName } from './demoBrand.js'
+import { DEMO_INNS, brandName, withoutLegalForm } from './demoBrand.js'
 import { getDemoNotifications } from './demoNotifications.js'
 import { getDemoProfile } from './demoProfiles.js'
 import { answerCallback, api, chooseApiBase, extractSender, keyboard, sendMessage, sendTo } from './max.js'
@@ -26,7 +26,7 @@ async function demoLabel(inn) {
   if (demoLabelCache.has(inn)) return demoLabelCache.get(inn)
   try {
     const company = await lookupCompanyByInn(inn)
-    const label = company?.name ?? inn
+    const label = withoutLegalForm(company?.name) ?? inn
     demoLabelCache.set(inn, label)
     return label
   } catch {
@@ -109,7 +109,7 @@ function numberEmoji(n) {
 /** Короткая версия — заголовок и только первая строка описания, полный
  *  текст доступен по кнопке-цифре (см. benefitDetailText). */
 function companyText(company) {
-  const lines = [brandName(company.inn, company.name), `Уведомления: ${notificationsCount(company.inn, company.userId)}`, '']
+  const lines = [`**${brandName(company.inn, company.name)}**`, `Уведомления: ${notificationsCount(company.inn, company.userId)}`, '']
 
   benefits.forEach((benefit, index) => {
     const shortDescription = benefit.description.split('\n')[0]
@@ -137,7 +137,7 @@ function ratingText(rating) {
 
 function profileText(linked) {
   const demo = getDemoProfile(linked.inn)
-  const lines = [brandName(linked.inn, linked.name)]
+  const lines = [`**${brandName(linked.inn, linked.name)}**`]
   if (demo) lines.push(ratingText(demo.rating))
   return lines.join('\n')
 }
@@ -228,7 +228,7 @@ async function sendRecommendationPush(userId, linked) {
   const text = [
     'Пока вы смотрели партнёров, мы подобрали для вас возможность:',
     '',
-    `«${brandName(top.requesterInn, top.requesterName)}» ${top.direction === 'supply' ? 'предлагает' : 'ищет'}: ${top.item}`,
+    `**«${brandName(top.requesterInn, top.requesterName)}»** ${top.direction === 'supply' ? 'предлагает' : 'ищет'}: ${top.item}`,
   ].join('\n')
 
   try {
@@ -378,7 +378,7 @@ async function handleMessage(update) {
 
 async function handleUpdate(update) {
   const type = update.update_type
-  console.log(`← ${type}`)
+  console.log('← ' + type + ' mid=' + (update.message?.body?.mid ?? '-') + ' text=' + (update.message?.body?.text ?? '-'))
 
   if (type === 'bot_started') {
     const fake = {

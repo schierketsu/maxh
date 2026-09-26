@@ -10,9 +10,15 @@ import {
   listMyRequests,
   listOpportunities,
   setRequestStatus,
+  unlinkUserFromCompany,
   upsertCompany,
 } from './b2bStore.js'
-import { notifyNewRequest, notifyOfferSubmitted } from './b2bNotify.js'
+import {
+  notifyAccountLinked,
+  notifyAccountUnlinked,
+  notifyNewRequest,
+  notifyOfferSubmitted,
+} from './b2bNotify.js'
 import { lookupCompanyByInn, lookupCompanyDetailsByInn } from './dadata.js'
 import { extractRequest } from './llm.js'
 import { recommendOpportunities } from './recommend.js'
@@ -147,11 +153,42 @@ export function startServer(port = process.env.PORT ?? 3001) {
           sendJson(res, 400, { error: 'Нужен userId' })
           return
         }
+        // До привязки — чтобы понять, вход это или переключение аккаунта.
+        const previous = getCompanyByUserId(numericUserId)
         linkUser(inn, numericUserId, undefined)
+        const dadataCompany = await getDadataCompany(inn).catch(() => null)
+        // Best-effort: ответ мини-аппу не ждёт доставки сообщения в чат.
+        notifyAccountLinked(
+          numericUserId,
+          { inn, name: dadataCompany?.name ?? inn },
+          previous ? { inn: previous.inn, name: previous.name } : null,
+        )
         sendJson(res, 200, { ok: true })
       } catch (error) {
         console.error('Link user failed:', error.message)
         sendJson(res, 502, { error: 'Не удалось привязать пользователя' })
+      }
+      return
+    }
+
+    // "Выйти" в мини-аппе: снимаем привязку MAX-аккаунта к компании, иначе
+    // мини-апп при следующем открытии сам залогинится обратно через
+    // /api/company/by-user/, а бот продолжит отвечать про прежнюю компанию.
+    if (req.method === 'POST' && pathname === '/api/company/unlink-user') {
+      try {
+        const { userId } = await readJsonBody(req)
+        const numericUserId = Number(userId)
+        if (!Number.isFinite(numericUserId)) {
+          sendJson(res, 400, { error: 'Нужен userId' })
+          return
+        }
+        const previous = getCompanyByUserId(numericUserId)
+        unlinkUserFromCompany(numericUserId)
+        notifyAccountUnlinked(numericUserId, previous ? { inn: previous.inn, name: previous.name } : null)
+        sendJson(res, 200, { ok: true })
+      } catch (error) {
+        console.error('Unlink user failed:', error.message)
+        sendJson(res, 502, { error: 'Не удалось выйти из аккаунта' })
       }
       return
     }

@@ -3,15 +3,17 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@maxhub/max-ui'
 import cakeIcon from '../assets/icons/icon_cake.png'
 import coffeeIcon from '../assets/icons/icon_coffe.png'
-import { fetchCompanyByInn, fetchCompanyByMaxUserId } from '../lib/companyApi'
-import { getMaxUserId } from '../lib/maxBridge'
+import { fetchCompanyByInn, fetchCompanyByMaxUserId, linkMaxUserToCompany } from '../lib/companyApi'
+import { getMaxUserId, getMaxUserName, waitForMaxUserId } from '../lib/maxBridge'
 import { useCompany } from '../context/CompanyContext'
+import type { CompanyProfile } from '../types'
 
 // Заглушка: реальной интеграции с Госуслугами нет, поэтому вместо неё —
 // переключатель между двумя заранее подготовленными демо-аккаунтами
-// (реальные ИНН, данные подтягиваются из DaData как обычно). Сессия не
-// сохраняется (persist=false у setCompany) — после перезапуска приложения
-// нужно будет "связать" аккаунт заново.
+// (реальные ИНН, данные подтягиваются из DaData как обычно). Сессия
+// сохраняется (persist=true) и дублируется привязкой на бэкенде, так что
+// при повторном открытии мини-аппа входить заново не нужно — выйти можно
+// только кнопкой "выйти" в профиле.
 interface DemoAccount {
   id: string
   inn: string
@@ -20,6 +22,9 @@ interface DemoAccount {
   avatarColor: string
   avatarIconClassName?: string
 }
+
+// Пауза на экране приветствия при автовходе по привязке из бота.
+const WELCOME_DURATION_MS = 5000
 
 const DEMO_ACCOUNTS: DemoAccount[] = [
   { id: 'cake', inn: '7724351831', name: 'ВКУСНЫЙ КЕЙК', avatarIcon: cakeIcon, avatarColor: 'var(--palette-red)' },
@@ -50,29 +55,69 @@ export function ModeSelectPage() {
   const [failed, setFailed] = useState(false)
   const [activeAccountId, setActiveAccountId] = useState(DEMO_ACCOUNTS[0].id)
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+  // Компания, найденная по привязке из бота — пока она здесь, показываем
+  // экран приветствия вместо формы входа (см. WELCOME_DURATION_MS).
+  const [welcome, setWelcome] = useState<CompanyProfile | null>(null)
+  // Пока не выяснили, выбран ли аккаунт в чат-боте, форму входа не рисуем —
+  // иначе она успевает мелькнуть перед экраном приветствия.
+  const [checking, setChecking] = useState(true)
   const activeAccount = DEMO_ACCOUNTS.find((account) => account.id === activeAccountId) ?? DEMO_ACCOUNTS[0]
 
-  // Мини-апп открыта из бота (кнопка open_app) — если этот MAX user_id уже
-  // привязан к компании (писал боту или раньше подтвердил себя тут через
-  // InnGate), узнаём его сразу и уводим на дашборд без ручного входа. Не
-  // трогаем, если компания уже выбрана (например, восстановлена из
-  // localStorage) — только на "холодный" заход.
+  // Аккаунт, выбранный в чат-боте (или сохранённый с прошлого раза), —
+  // повод не показывать форму входа вообще: здороваемся и уводим внутрь.
+  // Форма остаётся ровно для случая "в боте демо-юзер не выбран", и с неё
+  // же переключаются на другой демо-аккаунт.
   useEffect(() => {
-    if (company) return
-    const maxUserId = getMaxUserId()
-    if (!maxUserId) return
     let cancelled = false
-    fetchCompanyByMaxUserId(maxUserId)
-      .then((found) => {
-        if (cancelled || !found) return
-        setCompany(found, true)
-        navigate('/modes', { replace: true })
+    let timer: ReturnType<typeof setTimeout> | undefined
+
+    const greet = (profile: CompanyProfile) => {
+      if (cancelled) return
+      setWelcome(profile)
+      setChecking(false)
+      timer = setTimeout(() => navigate('/modes', { replace: true }), WELCOME_DURATION_MS)
+    }
+
+    // getMaxUserId() сразу после монтирования обычно ещё null: Bridge
+    // заполняет initDataUnsafe асинхронно. Без ожидания мы бы решили, что
+    // пользователь неизвестен, и показали форму входа вместо приветствия.
+    waitForMaxUserId()
+      .then((maxUserId) => {
+        if (cancelled) return
+        // Вне MAX (обычный браузер) спросить некого — идём по сохранённой сессии.
+        if (!maxUserId) {
+          if (company) greet(company)
+          else setChecking(false)
+          return
+        }
+        return fetchCompanyByMaxUserId(maxUserId).then((found) => {
+          if (cancelled) return
+          if (found) {
+            // Чат-бот — источник правды: там могли переключить компанию
+            // через /demo, и сохранённая в localStorage сессия тогда
+            // устарела. Сверяемся на каждом заходе, иначе бот и мини-апп
+            // показывали бы разные компании.
+            if (!company || company.inn !== found.inn) setCompany(found, true)
+            greet(found)
+            return
+          }
+          // В боте аккаунт не выбран (или из него вышли) — снимаем и
+          // локальную сессию, чтобы не остаться "залогиненными" в одном
+          // интерфейсе из двух.
+          if (company) setCompany(null)
+          setChecking(false)
+        })
       })
       .catch(() => {
-        // тихо игнорируем — просто останемся на обычном экране входа
+        // Сеть недоступна — не разлогиниваем, работаем по сохранённой сессии.
+        if (cancelled) return
+        if (company) greet(company)
+        else setChecking(false)
       })
+
     return () => {
       cancelled = true
+      if (timer) clearTimeout(timer)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -86,13 +131,48 @@ export function ModeSelectPage() {
         setFailed(true)
         return
       }
-      setCompany(company, false)
+      setCompany(company, true)
+      // Та же связка ИНН↔MAX user_id, что делает InnGate при ручном вводе:
+      // без неё бот не узнаёт, какую компанию представляет этот аккаунт, и
+      // "мои заявки" в чате оказываются пустыми, хотя в мини-аппе они есть.
+      const maxUserId = getMaxUserId()
+      if (maxUserId) {
+        linkMaxUserToCompany(company.inn, maxUserId).catch(() => {})
+      }
       navigate('/modes')
     } catch {
       setFailed(true)
     } finally {
       setLoading(false)
     }
+  }
+
+  // Короткая пауза, пока выясняем, выбран ли аккаунт в чат-боте: показываем
+  // пустой фирменный фон, а не форму входа, которая иначе мелькнёт.
+  if (checking) {
+    return <div className="page onboarding mode-select-page welcome-screen" />
+  }
+
+  if (welcome) {
+    const account = DEMO_ACCOUNTS.find((item) => item.inn === welcome.inn)
+    const userName = getMaxUserName()
+    return (
+      <div className="page onboarding mode-select-page welcome-screen">
+        {account && <AccountAvatar account={account} className="welcome-screen__avatar" />}
+        <p className="welcome-screen__company">{account?.name ?? welcome.name}</p>
+        <p className="welcome-screen__greeting">
+          {userName ? (
+            <>
+              {userName},
+              <br />
+              с возвращением!
+            </>
+          ) : (
+            'с возвращением!'
+          )}
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -104,7 +184,14 @@ export function ModeSelectPage() {
           aria-expanded={accountMenuOpen}
           onClick={() => setAccountMenuOpen((open) => !open)}
         >
-          {accountMenuOpen ? 'скрыть' : 'сменить аккаунт'}
+          <span className="account-switcher__trigger-label">
+            {accountMenuOpen ? 'скрыть' : 'сменить аккаунт'}
+          </span>
+          {/* Распорка держит ширину кнопки по самому длинному варианту текста,
+              чтобы меню (оно равно ей по ширине) не дёргалось при открытии. */}
+          <span className="account-switcher__trigger-sizer" aria-hidden="true">
+            сменить аккаунт
+          </span>
         </button>
 
         {accountMenuOpen && (

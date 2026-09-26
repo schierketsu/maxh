@@ -91,6 +91,7 @@ export function keyboard(rows) {
 
 /** Send a message straight to a known MAX user_id. Fails silently-ish (throws) if that user never started the bot. */
 export async function sendMessage(userId, text, attachments) {
+  console.log('→ sendMessage user=' + userId + ' ' + String(text).slice(0, 40))
   return api('POST', '/messages', {
     query: { user_id: userId },
     body: {
@@ -121,6 +122,7 @@ export async function sendTo(updateOrMessage, text, attachments) {
   const userId = message?.sender?.user_id ?? message?.recipient?.user_id
   const chatId = message?.recipient?.chat_id
   const query = userId ? { user_id: userId } : { chat_id: chatId }
+  console.log('→ sendTo ' + JSON.stringify(query) + ' ' + String(text).slice(0, 40))
   return api('POST', '/messages', {
     query,
     body: {

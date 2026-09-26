@@ -37,3 +37,14 @@ export async function linkMaxUserToCompany(inn: string, userId: number): Promise
     body: JSON.stringify({ userId }),
   })
 }
+
+/** Выход из аккаунта: снимает связку ИНН↔MAX user_id на бэкенде и просит
+ *  бота сообщить об этом в чат. Без неё мини-апп при следующем открытии
+ *  залогинится обратно через fetchCompanyByMaxUserId. */
+export async function unlinkMaxUser(userId: number): Promise<void> {
+  await fetch(`${API_BASE}/api/company/unlink-user`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId }),
+  })
+}

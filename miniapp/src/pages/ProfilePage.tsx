@@ -1,6 +1,8 @@
 import { useState, type CSSProperties } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useCompany } from '../context/CompanyContext'
+import { unlinkMaxUser } from '../lib/companyApi'
+import { getMaxUserId } from '../lib/maxBridge'
 import cakeIcon from '../assets/icons/icon_cake.png'
 import coffeeIcon from '../assets/icons/icon_coffe.png'
 import reviewsIcon from '../assets/icons/icon_rewies.png'
@@ -139,6 +141,21 @@ export function ProfilePage() {
   const navigate = useNavigate()
   const demoProfile = DEMO_PROFILES.find((profile) => profile.inn === company?.inn) ?? null
   const [showAllReviews, setShowAllReviews] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
+
+  // Сначала снимаем привязку на бэкенде и только потом чистим состояние:
+  // иначе ModeSelectPage на "/" тут же найдёт компанию через
+  // fetchCompanyByMaxUserId и вернёт нас обратно на /modes.
+  const logout = async () => {
+    if (loggingOut) return
+    setLoggingOut(true)
+    const maxUserId = getMaxUserId()
+    if (maxUserId) {
+      await unlinkMaxUser(maxUserId).catch(() => {})
+    }
+    clearCompany()
+    navigate('/', { replace: true })
+  }
 
   if (!company) {
     return <Navigate to="/" replace />
@@ -151,10 +168,6 @@ export function ProfilePage() {
 
   return (
     <>
-      <button type="button" className="company-details__logout" onClick={clearCompany}>
-        выйти
-      </button>
-
       <div className="company-details">
         <div className="company-details__content">
           <div className="company-details__profile-card">
@@ -227,6 +240,15 @@ export function ProfilePage() {
               </div>
             </div>
           </div>
+
+          <button
+            type="button"
+            className="company-details__logout"
+            disabled={loggingOut}
+            onClick={logout}
+          >
+            {loggingOut ? 'выходим…' : 'выйти'}
+          </button>
         </div>
       </div>
 
