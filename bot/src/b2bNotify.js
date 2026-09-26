@@ -110,3 +110,24 @@ export async function notifyAccountUnlinked(userId, previous) {
     console.error('Notify account unlinked failed:', error.message)
   }
 }
+
+/** Мини-апп сообщил о поданной заявке на меру господдержки — дублируем в
+ *  чат, чтобы пользователь видел её там же, где остальные события, и мог
+ *  проверить статус, не открывая мини-апп. */
+export async function notifyBenefitApplied(userId, title) {
+  if (!userId) return
+  try {
+    await sendMessage(
+      userId,
+      [
+        'Заявка подана',
+        '',
+        `**${title}**`,
+        '',
+        'Статус заявки виден в разделе «уведомления» и в мини-приложении.',
+      ].join('\n'),
+    )
+  } catch (error) {
+    console.error('Notify benefit applied failed:', error.message)
+  }
+}

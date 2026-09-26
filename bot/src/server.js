@@ -1,5 +1,6 @@
 import { createServer } from 'node:http'
 import {
+  addBenefitApplication,
   addOffer,
   createRequest,
   deleteRequest,
@@ -7,14 +8,17 @@ import {
   getCompanyByUserId,
   getRequest,
   linkUser,
+  listBenefitApplications,
   listMyRequests,
   listOpportunities,
+  removeBenefitApplication,
   setRequestStatus,
   unlinkUserFromCompany,
   upsertCompany,
 } from './b2bStore.js'
 import {
   notifyAccountLinked,
+  notifyBenefitApplied,
   notifyAccountUnlinked,
   notifyNewRequest,
   notifyOfferSubmitted,
@@ -43,30 +47,75 @@ async function getDadataCompanyDetails(inn) {
   return details
 }
 
-function withCors(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+// Источники, которым разрешено обращаться к API. Прод, где мини-апп и API
+// живут на одном домене, в CORS вообще не нуждается — список нужен для
+// разработки и для проверки, когда мини-апп поднимают локально, а данные
+// берут с сервера. Дополнить можно переменной ALLOWED_ORIGINS
+// (через запятую), не трогая код.
+const DEFAULT_ORIGINS = [
+  'https://hackmax.ru',
+  'https://www.hackmax.ru',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+]
+
+const ALLOWED_ORIGINS = new Set(
+  [...DEFAULT_ORIGINS, ...String(process.env.ALLOWED_ORIGINS ?? '').split(',')]
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+)
+
+// Перечислены все методы, которые реально обслуживает API: без PATCH и
+// DELETE браузер отклонял бы preflight на смене статуса заявки и на её
+// отзыве.
+const ALLOWED_METHODS = 'GET, POST, PATCH, DELETE, OPTIONS'
+
+/** Проставляет CORS-заголовки один раз на запрос. Origin не подставляется
+ *  звёздочкой, а возвращается ровно тот, что пришёл, — и только если он в
+ *  списке; иначе заголовка нет вовсе и браузер сам заблокирует ответ.
+ *  Vary: Origin обязателен, раз значение зависит от запроса. */
+function applyCors(req, res) {
+  const origin = req.headers.origin
+  res.setHeader('Vary', 'Origin')
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+  }
+  res.setHeader('Access-Control-Allow-Methods', ALLOWED_METHODS)
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  // Сутки — браузер не будет слать preflight перед каждым DELETE.
+  res.setHeader('Access-Control-Max-Age', '86400')
 }
 
 function sendJson(res, status, body) {
-  withCors(res)
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' })
   res.end(JSON.stringify(body))
 }
 
+/** Тело собирается буферами и декодируется целиком в самом конце.
+ *  Раньше чанки склеивались как строки (`raw += chunk`), то есть каждый
+ *  декодировался отдельно: символ кириллицы, разрезанный на границе чанков,
+ *  превращался в два "ромбика". На коротких телах это не проявлялось, на
+ *  длинном описании заявки — ломало текст. */
 function readJsonBody(req) {
   return new Promise((resolvePromise, reject) => {
-    let raw = ''
+    const chunks = []
+    let size = 0
     req.on('data', (chunk) => {
-      raw += chunk
-      if (raw.length > 1_000_000) {
+      size += chunk.length
+      if (size > 1_000_000) {
         reject(new Error('Body too large'))
         req.destroy()
+        return
       }
+      chunks.push(chunk)
     })
     req.on('end', () => {
-      if (!raw) {
+      if (chunks.length === 0) {
+        resolvePromise({})
+        return
+      }
+      const raw = Buffer.concat(chunks).toString('utf8')
+      if (!raw.trim()) {
         resolvePromise({})
         return
       }
@@ -82,8 +131,9 @@ function readJsonBody(req) {
 
 export function startServer(port = process.env.PORT ?? 3001) {
   const server = createServer(async (req, res) => {
+    applyCors(req, res)
+
     if (req.method === 'OPTIONS') {
-      withCors(res)
       res.writeHead(204)
       res.end()
       return
@@ -190,6 +240,65 @@ export function startServer(port = process.env.PORT ?? 3001) {
         console.error('Unlink user failed:', error.message)
         sendJson(res, 502, { error: 'Не удалось выйти из аккаунта' })
       }
+      return
+    }
+
+    // --- Заявки на меры господдержки ------------------------------------
+    // Лежат на бэкенде, а не в localStorage: иначе бот не знает о поданных
+    // заявках и сценарий обрывается на границе мини-аппа.
+    if (req.method === 'GET' && pathname === '/api/benefits/applications') {
+      const inn = String(url.searchParams.get('inn') ?? '').replace(/\D/g, '')
+      const userId = url.searchParams.get('userId')
+      if (!inn) {
+        sendJson(res, 400, { error: 'Нужен inn' })
+        return
+      }
+      sendJson(res, 200, { applications: listBenefitApplications(inn, userId) })
+      return
+    }
+
+    if (req.method === 'POST' && pathname === '/api/benefits/applications') {
+      try {
+        const { inn, userId, benefitId, title } = await readJsonBody(req)
+        const cleanedInn = String(inn ?? '').replace(/\D/g, '')
+        if (!cleanedInn || !benefitId) {
+          sendJson(res, 400, { error: 'Нужны inn и benefitId' })
+          return
+        }
+        const application = addBenefitApplication({
+          inn: cleanedInn,
+          ownerUserId: Number.isFinite(Number(userId)) ? Number(userId) : null,
+          benefitId,
+          title: title ?? benefitId,
+        })
+        // Best-effort: ответ мини-аппу не ждёт доставки сообщения в чат.
+        notifyBenefitApplied(application.ownerUserId, application.title)
+        sendJson(res, 201, { application })
+      } catch (error) {
+        console.error('Create benefit application failed:', error.message)
+        sendJson(res, 502, { error: 'Не удалось подать заявку' })
+      }
+      return
+    }
+
+    const benefitAppMatch = pathname.match(/^\/api\/benefits\/applications\/([^/]+)$/)
+    if (req.method === 'DELETE' && benefitAppMatch) {
+      const inn = String(url.searchParams.get('inn') ?? '').replace(/\D/g, '')
+      const userId = url.searchParams.get('userId')
+      if (!inn) {
+        sendJson(res, 400, { error: 'Нужен inn' })
+        return
+      }
+      const removed = removeBenefitApplication({
+        inn,
+        ownerUserId: Number.isFinite(Number(userId)) ? Number(userId) : null,
+        benefitId: benefitAppMatch[1],
+      })
+      if (!removed) {
+        sendJson(res, 404, { error: 'Заявка не найдена' })
+        return
+      }
+      sendJson(res, 200, { ok: true })
       return
     }
 

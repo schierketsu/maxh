@@ -111,6 +111,10 @@ function seedData() {
   const now = new Date().toISOString()
   return {
     companies: {},
+    // Заявки на меры господдержки, поданные из мини-аппа. Лежат здесь,
+    // а не в localStorage браузера, чтобы бот тоже их видел и мог
+    // показать статус в чате.
+    benefitApplications: [],
     // testers: личная песочница каждого MAX-аккаунта — какую компанию (ИНН)
     // он сейчас представляет. Раньше userId/chatId хранились прямо в
     // companies[inn], из-за чего два тестера, выбравших одну и ту же
@@ -137,6 +141,7 @@ function seedData() {
  *  однозначно определить по тому, кто сейчас привязан к их ИНН. */
 function migrate(loaded) {
   loaded.testers ??= {}
+  loaded.benefitApplications ??= []
   for (const [inn, company] of Object.entries(loaded.companies ?? {})) {
     if (company.userId != null && loaded.testers[company.userId] === undefined) {
       loaded.testers[company.userId] = {
@@ -257,6 +262,52 @@ export function unlinkUserFromCompany(userId) {
   delete data.testers[numeric]
   save()
   return existing
+}
+
+/** Заявки на меры господдержки этого MAX-аккаунта (или всей компании, если
+ *  userId не передан). Как и у B2B-заявок, владелец — конкретный аккаунт:
+ *  два тестера под одной демо-компанией не видят заявок друг друга. */
+export function listBenefitApplications(inn, ownerUserId) {
+  const cleaned = String(inn ?? '').replace(/\D/g, '')
+  const numericOwner = ownerUserId == null ? null : Number(ownerUserId)
+  return (data.benefitApplications ?? [])
+    .filter((item) => item.inn === cleaned && (numericOwner == null || item.ownerUserId === numericOwner))
+    .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))
+}
+
+/** Подать заявку. Повторная подача той же меры тем же аккаунтом не плодит
+ *  дубликаты — запись просто перезаписывается с новой отметкой времени. */
+export function addBenefitApplication({ inn, ownerUserId, benefitId, title }) {
+  const cleaned = String(inn ?? '').replace(/\D/g, '')
+  const numericOwner = ownerUserId == null ? null : Number(ownerUserId)
+  data.benefitApplications = (data.benefitApplications ?? []).filter(
+    (item) => !(item.inn === cleaned && item.benefitId === benefitId && item.ownerUserId === numericOwner),
+  )
+  const application = {
+    id: randomUUID(),
+    inn: cleaned,
+    ownerUserId: numericOwner,
+    benefitId,
+    title,
+    submittedAt: new Date().toISOString(),
+  }
+  data.benefitApplications.unshift(application)
+  save()
+  return application
+}
+
+/** Отозвать заявку. Возвращает удалённую запись или null, если её не было. */
+export function removeBenefitApplication({ inn, ownerUserId, benefitId }) {
+  const cleaned = String(inn ?? '').replace(/\D/g, '')
+  const numericOwner = ownerUserId == null ? null : Number(ownerUserId)
+  const before = data.benefitApplications ?? []
+  const removed = before.find(
+    (item) => item.inn === cleaned && item.benefitId === benefitId && item.ownerUserId === numericOwner,
+  )
+  if (!removed) return null
+  data.benefitApplications = before.filter((item) => item !== removed)
+  save()
+  return removed
 }
 
 export function createRequest({

@@ -1,0 +1,25 @@
+# Локальный запуск через Docker Compose: HTTP без сертификатов, статика и
+# прокси на API за одним адресом. Боевой конфиг лежит на сервере отдельно и
+# дополнительно занимается HTTPS.
+:8080 {
+	encode zstd gzip
+
+	# API бота — тот же origin, поэтому VITE_API_BASE_URL остаётся пустым.
+	handle /api/* {
+		reverse_proxy bot:3001
+	}
+
+	# Файлы с хэшем в имени: отсутствующий бандл должен давать честный 404,
+	# а не index.html, иначе браузер получит HTML вместо JS-модуля.
+	handle /assets/* {
+		root * /srv
+		file_server
+	}
+
+	# SPA-роутинг react-router: неизвестный путь отдаёт index.html.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

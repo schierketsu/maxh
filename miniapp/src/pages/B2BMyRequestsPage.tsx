@@ -4,6 +4,11 @@ import { Button } from '@maxhub/max-ui'
 import { useCompany } from '../context/CompanyContext'
 import { deleteRequest, fetchMyRequests, setRequestStatus } from '../lib/b2bApi'
 import { getContactedRequests, removeContactedRequest, type ContactedRequest } from '../lib/contactedRequests'
+import {
+  fetchBenefitApplications,
+  withdrawBenefitApplication,
+  type BenefitApplication,
+} from '../lib/benefitApplications'
 import { formatMoney } from '../lib/matching'
 import { brandCompanyName } from '../lib/demoBranding'
 import { getMaxUserId } from '../lib/maxBridge'
@@ -36,11 +41,15 @@ export function B2BMyRequestsPage() {
   const navigate = useNavigate()
   const [requests, setRequests] = useState<B2BRequestWithOffers[] | null>(null)
   const [contacted, setContacted] = useState<ContactedRequest[]>([])
+  const [benefitApps, setBenefitApps] = useState<BenefitApplication[]>([])
   const [expandedRequests, setExpandedRequests] = useState<Set<string>>(new Set())
   const [expandedContacted, setExpandedContacted] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!company) return
+    fetchBenefitApplications(company.inn, getMaxUserId())
+      .then(setBenefitApps)
+      .catch(() => setBenefitApps([]))
     fetchMyRequests(company.inn, getMaxUserId())
       .then(setRequests)
       .catch(() => setRequests([]))
@@ -174,6 +183,54 @@ export function B2BMyRequestsPage() {
           })
         )}
       </div>
+
+      {benefitApps.length > 0 && (
+        <>
+          <section className="section-head">
+            <h2>заявки на господдержку:</h2>
+          </section>
+          <div className="requests-table">
+            {benefitApps.map((item) => (
+              <div className="requests-table__item" key={item.benefitId}>
+                <div
+                  className="requests-table__row"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate(`/benefits/${item.benefitId}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      navigate(`/benefits/${item.benefitId}`)
+                    }
+                  }}
+                >
+                  <span className="requests-table__title">{item.title}</span>
+                  <span className="requests-table__date">
+                    {new Date(item.submittedAt).toLocaleDateString('ru-RU')}
+                  </span>
+                  <button
+                    type="button"
+                    className="requests-table__action requests-table__action--danger"
+                    aria-label="Отозвать заявку"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      withdrawBenefitApplication(company.inn, item.benefitId, getMaxUserId())
+                        .then(() =>
+                          setBenefitApps((prev) => prev.filter((a) => a.benefitId !== item.benefitId)),
+                        )
+                        .catch(() => {
+                          // Сеть недоступна — список остаётся как был
+                        })
+                    }}
+                  >
+                    <img className="requests-table__action-icon" src={closeIcon} alt="" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       {contacted.length > 0 && (
         <section className="section-head">

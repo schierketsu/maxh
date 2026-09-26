@@ -24,7 +24,7 @@ interface DemoAccount {
 }
 
 // Пауза на экране приветствия при автовходе по привязке из бота.
-const WELCOME_DURATION_MS = 5000
+const WELCOME_DURATION_MS = 3000
 
 const DEMO_ACCOUNTS: DemoAccount[] = [
   { id: 'cake', inn: '7724351831', name: 'ВКУСНЫЙ КЕЙК', avatarIcon: cakeIcon, avatarColor: 'var(--palette-red)' },
@@ -213,7 +213,6 @@ export function ModeSelectPage() {
                     setAccountMenuOpen(false)
                   }}
                 >
-                  <AccountAvatar account={account} className="account-switcher__item-avatar" />
                   <span className="account-switcher__item-name">{account.name}</span>
                 </button>
               ))}

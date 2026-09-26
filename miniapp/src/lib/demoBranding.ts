@@ -93,3 +93,12 @@ export function avatarColor(seed: string): string {
   for (let i = 0; i < seed.length; i += 1) sum += seed.charCodeAt(i)
   return AVATAR_COLORS[sum % AVATAR_COLORS.length]
 }
+
+/** Первая буква для кружка-аватара. Берём первый буквенно-цифровой символ,
+ *  а не charAt(0): названия часто начинаются с кавычки-ёлочки («Фуршет и Ко»)
+ *  или с ООО/ИП, и в аватар попадал бы знак препинания. */
+export function initialLetter(name: string | null | undefined): string {
+  const cleaned = String(name ?? '').replace(/^(ООО|ИП|АО|ЗАО|ОАО|ПАО)\s+/i, '')
+  const match = cleaned.match(/[\p{L}\p{N}]/u)
+  return (match?.[0] ?? '?').toUpperCase()
+}

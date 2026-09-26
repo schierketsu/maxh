@@ -1,5 +1,12 @@
 import './env.js'
-import { getCompanyByUserId, linkUser, listMyRequests, unlinkUserFromCompany, upsertCompany } from './b2bStore.js'
+import {
+  getCompanyByUserId,
+  linkUser,
+  listBenefitApplications,
+  listMyRequests,
+  unlinkUserFromCompany,
+  upsertCompany,
+} from './b2bStore.js'
 import { handleB2BCallback, handleB2BEntry, handleB2BText } from './b2bChat.js'
 import { benefits, PROMO_BADGES } from './benefits.js'
 import { clearSession } from './chatSessions.js'
@@ -7,7 +14,17 @@ import { lookupCompanyByInn } from './dadata.js'
 import { DEMO_INNS, brandName, withoutLegalForm } from './demoBrand.js'
 import { getDemoNotifications } from './demoNotifications.js'
 import { getDemoProfile } from './demoProfiles.js'
-import { answerCallback, api, chooseApiBase, extractSender, keyboard, sendMessage, sendTo } from './max.js'
+import {
+  answerCallback,
+  api,
+  chooseApiBase,
+  extractSender,
+  hasToken,
+  keyboard,
+  sendMessage,
+  sendTo,
+} from './max.js'
+import { formatMoney } from './matching.js'
 import { recommendOpportunities } from './recommend.js'
 import { startServer } from './server.js'
 
@@ -56,6 +73,7 @@ function mainMenu(userId) {
     benefitNumberRow(),
     [{ type: 'callback', text: 'партнёры рядом', payload: 'menu:b2b' }],
     [{ type: 'callback', text: 'профиль', payload: 'menu:profile' }],
+    [{ type: 'callback', text: 'мои заявки на поддержку', payload: 'menu:benefit-applications' }],
     [{ type: 'callback', text: 'уведомления', payload: 'menu:notifications' }],
   ])
 }
@@ -96,12 +114,64 @@ function startText(name) {
  *  мини-аппе (ChooseModePage.tsx). */
 function notificationsCount(inn, ownerUserId) {
   const realCount = listMyRequests(inn, ownerUserId).reduce((sum, request) => sum + request.offers.length, 0)
-  return realCount + getDemoNotifications(inn).length
+  return realCount + listBenefitApplications(inn, ownerUserId).length + getDemoNotifications(inn).length
 }
 
 /** 1️⃣2️⃣… — юникодная "клавиша с цифрой", той же цифрой, что и у кнопки под
  *  этим пунктом (benefitNumberRow), чтобы в тексте и в клавиатуре было
  *  видно одно и то же число. */
+/** Содержимое раздела "уведомления": предложения, полученные по своим
+ *  заявкам, плюс витринные уведомления демо-компании. Раньше раздел
+ *  показывал только вторую часть, из-за чего при непустом счётчике
+ *  в шапке открывалась заглушка. Состав тот же, что считает notificationsCount. */
+/** Этапы обработки заявки на меру поддержки. Дублируют STAGES из
+ *  miniapp/src/pages/BenefitDetailPage.tsx: бот и мини-апп — отдельные
+ *  проекты без общего пакета, а статус должен совпадать в обоих интерфейсах.
+ *  Задержки отсчитываются от момента подачи. */
+const BENEFIT_STAGES = [
+  { label: 'Заявка подана', afterMinutes: 0 },
+  { label: 'Заявка зарегистрирована', afterMinutes: 1 },
+  { label: 'Проверка документов', afterMinutes: 10 },
+  { label: 'Ожидает рассмотрения', afterMinutes: 60 },
+]
+
+/** Текущий этап заявки: последний, срок которого уже наступил. */
+function benefitStage(submittedAt) {
+  const base = new Date(submittedAt).getTime()
+  const now = Date.now()
+  let current = BENEFIT_STAGES[0]
+  for (const stage of BENEFIT_STAGES) {
+    if (now >= base + stage.afterMinutes * 60_000) current = stage
+  }
+  return current.label
+}
+
+/** Раздел "мои заявки на господдержку" в чате — тот же список, что в
+ *  мини-аппе, с тем же статусом. */
+function benefitApplicationLines(linked) {
+  return listBenefitApplications(linked.inn, linked.userId).map(
+    (item) => `**${item.title}**\n   ${benefitStage(item.submittedAt)}`,
+  )
+}
+
+function notificationLines(linked) {
+  const lines = []
+  for (const request of listMyRequests(linked.inn, linked.userId)) {
+    for (const offer of request.offers) {
+      const price = offer.price != null ? ` — ${formatMoney(offer.price)}` : ''
+      const terms = offer.terms ? `\n   ${offer.terms}` : ''
+      lines.push(
+        `**${brandName(offer.supplierInn, offer.supplierName)}** ответила на заявку «${request.item}»${price}${terms}`,
+      )
+    }
+  }
+  for (const item of listBenefitApplications(linked.inn, linked.userId)) {
+    lines.push(`Заявка «${item.title}»: ${benefitStage(item.submittedAt)}`)
+  }
+  lines.push(...getDemoNotifications(linked.inn))
+  return lines
+}
+
 function numberEmoji(n) {
   return `${n}️⃣`
 }
@@ -294,16 +364,32 @@ async function handleCallback(update) {
     )
     return
   }
+  if (payload === 'menu:benefit-applications') {
+    const linked = userId ? getCompanyByUserId(userId) : null
+    if (!linked) {
+      await answerCallback(callbackId, GOSUSLUGI_NOTICE_TEXT, await authMenu())
+      return
+    }
+    const lines = benefitApplicationLines(linked)
+    await answerCallback(
+      callbackId,
+      lines.length > 0
+        ? ['Ваши заявки на меры поддержки:', '', ...lines].join('\n\n')
+        : 'Вы ещё не подавали заявок на меры поддержки. Подать можно в мини-приложении.',
+      keyboard([[{ type: 'callback', text: 'назад', payload: 'menu:main' }]]),
+    )
+    return
+  }
   if (payload === 'menu:notifications') {
     const linked = userId ? getCompanyByUserId(userId) : null
     if (!linked) {
       await answerCallback(callbackId, GOSUSLUGI_NOTICE_TEXT, await authMenu())
       return
     }
-    const demoNotifications = getDemoNotifications(linked.inn)
+    const lines = notificationLines(linked)
     await answerCallback(
       callbackId,
-      demoNotifications.length > 0 ? demoNotifications.join('\n') : 'Ожидается разработка',
+      lines.length > 0 ? lines.join('\n\n') : 'Новых уведомлений нет.',
       keyboard([[{ type: 'callback', text: 'назад', payload: 'menu:main' }]]),
     )
     return
@@ -442,13 +528,41 @@ async function poll() {
   }
 }
 
-const me = await chooseApiBase()
-const subs = await api('GET', '/subscriptions')
-if ((subs.subscriptions ?? []).length > 0) {
-  console.log('Webhook subscriptions exist; long polling may not receive events.')
-  console.log(JSON.stringify(subs.subscriptions, null, 2))
+// Long polling к MAX должен вести ровно один процесс: два клиента с одним
+// токеном делят апдейты между собой, и пользователь получает ответы то
+// дважды, то ни разу. Бот уже работает на боевом стенде, поэтому при
+// локальном запуске (в том числе через docker compose) polling по
+// умолчанию выключен — HTTP API при этом поднимается, и мини-приложение
+// работает полностью. Включить: BOT_POLLING=on.
+const pollingEnabled = String(process.env.BOT_POLLING ?? 'on').toLowerCase() === 'on'
+
+// Ключи проверяем на старте, а не при первом запросе: иначе проверяющий с
+// пустым .env увидит только 502 в браузере и будет гадать, что сломалось.
+for (const [name, effect] of [
+  ['MAX_BOT_TOKEN', 'чат-бот не подключится к MAX'],
+  ['DADATA_API_KEY', 'поиск компании по ИНН вернёт 502'],
+  ['CLOUDRU_API_KEY', 'разбор заявки текстом не сработает, рекомендации откатятся на ОКВЭД'],
+]) {
+  if (!process.env[name]?.trim()) {
+    console.warn(`⚠ ${name} не задан — ${effect}. См. bot/.env.example`)
+  }
 }
-await registerCommands()
+
 startServer()
-await poll()
-void me
+
+if (!pollingEnabled) {
+  console.log('BOT_POLLING=off — long polling не запущен, работает только HTTP API.')
+  console.log('Чат-бот проверяется на боевом стенде — см. ссылку в README.')
+} else if (!hasToken()) {
+  console.log('MAX_BOT_TOKEN не задан — long polling не запущен, работает только HTTP API.')
+} else {
+  const me = await chooseApiBase()
+  const subs = await api('GET', '/subscriptions')
+  if ((subs.subscriptions ?? []).length > 0) {
+    console.log('Webhook subscriptions exist; long polling may not receive events.')
+    console.log(JSON.stringify(subs.subscriptions, null, 2))
+  }
+  await registerCommands()
+  await poll()
+  void me
+}

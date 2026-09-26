@@ -258,13 +258,6 @@ export function MapPage() {
               </button>
 
               <div className="map-toppanel__row">
-                {/* Цвет фиксированный (тот же, что у кнопки "Перейти"), а не
-                    по названию компании — панель должна читаться как одна
-                    деталь. */}
-                <span className="map-toppanel__avatar" aria-hidden="true">
-                  {name.trim().charAt(0).toUpperCase()}
-                </span>
-
                 <div className="map-toppanel__body">
                   <p className="map-toppanel__title">Рекомендуем для вас</p>
                   <p className="map-toppanel__name">{name}</p>
@@ -287,7 +280,7 @@ export function MapPage() {
                       className="map-toppanel__cta"
                       onClick={() => goToRecommendation(top)}
                     >
-                      Перейти
+                      перейти
                     </button>
                   </div>
                 </div>

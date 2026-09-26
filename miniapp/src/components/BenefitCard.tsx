@@ -1,13 +1,15 @@
+import { useNavigate } from 'react-router-dom'
 import type { Benefit } from '../data/benefits'
 import { statusLabel } from '../lib/matching'
 import type { ProgramStatus } from '../types'
 import newWindowIcon from '../assets/icons/icon_new_window.png'
 
+// Порядок заливки карточек, по кругу. Лаймовый исключён: он закреплён за
+// действиями (кнопки «перейти», «связаться») и в ленте читался как кнопка.
 const PLACEHOLDER_COLORS = [
   'var(--palette-blue)',
   'var(--palette-purple)',
   'var(--palette-pink)',
-  'var(--palette-lime)',
   'var(--palette-red)',
 ]
 
@@ -20,7 +22,9 @@ interface BenefitCardProps {
 }
 
 export function BenefitCard({ benefit, index, statusTag }: BenefitCardProps) {
+  const navigate = useNavigate()
   const color = PLACEHOLDER_COLORS[index % PLACEHOLDER_COLORS.length]
+  const openDetails = () => navigate(`/benefits/${benefit.id}`)
 
   if (statusTag) {
     return (
@@ -37,7 +41,7 @@ export function BenefitCard({ benefit, index, statusTag }: BenefitCardProps) {
         <p className="benefit-card__desc">{benefit.description}</p>
 
         <div className="benefit-card__actions">
-          <button type="button" className="benefit-card__cta">
+          <button type="button" className="benefit-card__cta" onClick={openDetails}>
             Подробнее
           </button>
         </div>
@@ -49,7 +53,12 @@ export function BenefitCard({ benefit, index, statusTag }: BenefitCardProps) {
     <div className="benefit-card benefit-card--solid" style={{ background: color }}>
       <div className="benefit-card__tags">
         <span className="benefit-card__tag">{PROMO_BADGES[index % PROMO_BADGES.length]}</span>
-        <button type="button" className="benefit-card__cta benefit-card__cta--icon" aria-label="Подробнее">
+        <button
+          type="button"
+          className="benefit-card__cta benefit-card__cta--icon"
+          aria-label="Подробнее"
+          onClick={openDetails}
+        >
           <img className="benefit-card__cta-icon" src={newWindowIcon} alt="" />
         </button>
       </div>

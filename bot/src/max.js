@@ -1,21 +1,16 @@
-import { readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { Agent, fetch as undiciFetch } from 'undici'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const ROOT = resolve(__dirname, '../..')
+// Токен берётся только из окружения. Раньше был запасной путь — чтение
+// in_help/pass.md, но этот каталог не попадает в репозиторий (там лежит
+// выданный токен), и у проверяющего чтение падало бы с ENOENT ещё до
+// старта. Теперь отсутствие токена — штатная ситуация: HTTP API поднимется
+// и мини-приложение будет работать, откажут только обращения к MAX.
+const TOKEN = (process.env.MAX_BOT_TOKEN ?? '').trim()
 
-function loadToken() {
-  if (process.env.MAX_BOT_TOKEN) return process.env.MAX_BOT_TOKEN.trim()
-  const passPath = resolve(ROOT, 'in_help/pass.md')
-  const raw = readFileSync(passPath, 'utf8')
-  const line = raw.split(/\r?\n/).find((item) => item.includes('Токен'))
-  if (!line) throw new Error('MAX_BOT_TOKEN is not set and pass.md has no token line')
-  return line.split(':').slice(1).join(':').trim()
+/** Есть ли токен для работы с MAX. */
+export function hasToken() {
+  return TOKEN.length > 0
 }
-
-const TOKEN = loadToken()
 const PREFERRED_BASE = process.env.MAX_API_BASE ?? 'https://platform-api2.max.ru'
 const FALLBACK_BASE = 'https://platform-api.max.ru'
 const insecureAgent = new Agent({ connect: { rejectUnauthorized: false } })
@@ -24,6 +19,9 @@ let apiBase = PREFERRED_BASE
 let useInsecureTls = PREFERRED_BASE.includes('platform-api2')
 
 export async function api(method, path, { query, body } = {}) {
+  if (!TOKEN) {
+    throw new Error('MAX_BOT_TOKEN не задан — обращения к MAX недоступны')
+  }
   const url = new URL(path, apiBase)
   if (query) {
     for (const [key, value] of Object.entries(query)) {

@@ -7,6 +7,7 @@ import { B2BHomePage } from './pages/B2BHomePage'
 import { B2BMyRequestsPage } from './pages/B2BMyRequestsPage'
 import { B2BNewRequestPage } from './pages/B2BNewRequestPage'
 import { B2BOfferPage } from './pages/B2BOfferPage'
+import { BenefitDetailPage } from './pages/BenefitDetailPage'
 import { ChooseModePage } from './pages/ChooseModePage'
 import { DashboardPage } from './pages/DashboardPage'
 import { MapPage } from './pages/MapPage'
@@ -34,6 +35,7 @@ function AppRoutes() {
           element={<Navigate to={company ? '/gov/dashboard' : '/'} replace />}
         />
         <Route path="/gov/dashboard" element={<DashboardPage />} />
+        <Route path="/benefits/:id" element={<BenefitDetailPage />} />
 
         <Route
           path="/b2b"

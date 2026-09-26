@@ -2,6 +2,10 @@ node_modules
 dist
 miniapp/dist
 bot/.env
-in_help/llm.md
-in_help/map.md
+miniapp/.env
+# Переменные для docker compose
+.env
+# Рабочие материалы хакатона: там лежат выданный токен бота (pass.md),
+# заметки и описание кейса — ничего из этого не должно попасть в репозиторий.
+in_help/
 

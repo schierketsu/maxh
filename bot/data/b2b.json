@@ -8,7 +8,7 @@
         "56.10"
       ],
       "inn": "7724351831",
-      "updatedAt": "2026-09-26T07:15:41.998Z"
+      "updatedAt": "2026-09-26T13:21:10.959Z"
     },
     "7717762862": {
       "name": "ООО \"КОФЕЙНЯ №2\"",
@@ -32,54 +32,6 @@
     }
   },
   "requests": [
-    {
-      "id": "c1e701ab-cd8c-4843-be7d-21c47894b534",
-      "requesterInn": "7717762862",
-      "requesterName": "ООО \"КОФЕЙНЯ №2\"",
-      "isDemo": false,
-      "status": "inactive",
-      "direction": "supply",
-      "item": "робуста, свежая обжарка",
-      "qty": "10 пачек по 2 кг",
-      "deadline": "2026-11-30",
-      "budget": null,
-      "notes": "свежая обжарка от октября",
-      "rawText": "робуста 10 пачек по 2 кг, свежая обжарка от октября, храню до 30 ноября",
-      "createdAt": "2026-09-16T12:42:20.498Z",
-      "ownerUserId": null
-    },
-    {
-      "id": "8fe24a9a-7ffc-42f3-ad6e-5a014299ec6f",
-      "requesterInn": "7724351831",
-      "requesterName": "ООО \"ТОРТЫ МОСКВА\"",
-      "isDemo": false,
-      "status": "active",
-      "direction": "supply",
-      "item": "мука миндальная",
-      "qty": "10 мешков",
-      "deadline": null,
-      "budget": null,
-      "notes": "каждую неделю есть возможность поставлять по 10 мешков, только самовывозом, мешок 15 кг весит",
-      "rawText": "каждую неделю есть возможность поставлять по 10 мешком муки, но только самовывозом, мука миндальная, мешок 15 кг весит",
-      "createdAt": "2026-09-15T14:14:34.974Z",
-      "ownerUserId": 389071533
-    },
-    {
-      "id": "98737e87-1675-4e59-adf6-0cc49fc11727",
-      "requesterInn": "7724351831",
-      "requesterName": "ООО \"ТОРТЫ МОСКВА\"",
-      "isDemo": false,
-      "status": "active",
-      "direction": "demand",
-      "item": "сахар тростниковый",
-      "qty": "20 кг",
-      "deadline": "2026-11-30",
-      "budget": 2000,
-      "notes": null,
-      "rawText": "20 килограмм сахара тростникового за 2к рублей до 30 ноября",
-      "createdAt": "2026-09-15T14:03:33.871Z",
-      "ownerUserId": 389071533
-    },
     {
       "id": "014624fe-2b6d-4a21-9cf8-587abfc627fa",
       "requesterInn": null,
@@ -119,7 +71,7 @@
     {
       "id": "288b726b-b18e-4000-b99c-c1516e00ea60",
       "requesterInn": null,
-      "requesterName": "Кейтеринг «Фуршет и Ко»",
+      "requesterName": "«Фуршет и Ко»",
       "isDemo": true,
       "status": "active",
       "rawText": null,
@@ -225,31 +177,7 @@
       "lon": 37.6301
     }
   ],
-  "offers": [
-    {
-      "id": "937f379b-d17e-428e-b3d8-49130cb48392",
-      "requestId": "014624fe-2b6d-4a21-9cf8-587abfc627fa",
-      "supplierInn": "7717762862",
-      "supplierName": "ООО \"КОФЕЙНЯ №2\"",
-      "price": 150000,
-      "terms": "доставка за 5 дней, зёрна свежей обжарки",
-      "createdAt": "2026-09-07T16:52:40.250Z"
-    },
-    {
-      "id": "c855283d-5d40-4f89-b540-8f4d3f572899",
-      "requestId": "014624fe-2b6d-4a21-9cf8-587abfc627fa",
-      "supplierInn": "7717762862",
-      "supplierName": "ООО \"КОФЕЙНЯ №2\"",
-      "price": 99000,
-      "terms": "поставка за 5 дней, кофе премиум",
-      "createdAt": "2026-09-07T16:53:04.003Z"
-    }
-  ],
-  "testers": {
-    "389071533": {
-      "inn": "7724351831",
-      "chatId": 317785968,
-      "updatedAt": "2026-09-26T07:15:41.999Z"
-    }
-  }
+  "offers": [],
+  "testers": {},
+  "benefitApplications": []
 }

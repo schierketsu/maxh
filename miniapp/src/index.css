@@ -1775,26 +1775,7 @@ body::before {
 /* --- Панель рекомендации на карте --------------------------------------- */
 
 .map-toppanel { padding: 14px 16px; }
-.map-toppanel__row { display: flex; align-items: stretch; gap: 14px; }
-/* Кружок с первой буквой — как у аватаров в отзывах, только крупнее: фото
-   компании у нас нет, а пустой плейсхолдер выглядел бы дырой. */
-.map-toppanel__avatar {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 76px;
-  height: 76px;
-  border-radius: 20px;
-  color: #fff;
-  font-size: 34px;
-  font-weight: 700;
-  line-height: 1;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 45%),
-    inset 0 -3px 8px -3px rgb(10 14 40 / 25%),
-    0 6px 16px -8px rgb(32 38 76 / 40%);
-}
+.map-toppanel__row { display: flex; }
 .map-toppanel__body { min-width: 0; flex: 1; display: flex; flex-direction: column; }
 .map-toppanel__title {
   margin: 0;
@@ -1869,20 +1850,273 @@ body::before {
   stroke-linejoin: round;
 }
 
-/* Аватар тянется на всю высоту карточки, а текст и нижняя строка с оценкой
-   и кнопкой идут строго в колонке справа от него — как на макете. */
-.map-toppanel__row { align-items: stretch; gap: 16px; }
-.map-toppanel__avatar {
-  align-self: stretch;
-  width: 104px;
-  height: auto;
-  min-height: 104px;
-  border-radius: 22px;
-  font-size: 44px;
-}
 .map-toppanel__body { justify-content: center; }
 .map-toppanel__foot { margin-top: 10px; }
 .map-toppanel__cta { padding: 0 20px; font-weight: 700; }
 
-/* Тот же лаймовый, что у кнопки «Перейти» (.map-toppanel__cta). */
-.map-toppanel__avatar { background: var(--palette-lime); }
+
+/* Кнопка «Перейти» — тот же вид, что у «связаться» в панели заявки
+   (.map-popup__cta): гасим стеклянный градиент и тень, возвращаем плоскую
+   лаймовую пилюлю тех же размеров. */
+.map-toppanel__cta {
+  min-width: 64px;
+  height: 40px;
+  padding: 0 18px;
+  background-image: none;
+  box-shadow: none;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.map-toppanel__cta:active { background: var(--yellow); transform: none; }
+
+/* Оценка — крупнее: в панели это единственная цифра, она должна считываться
+   с одного взгляда. */
+.map-toppanel__metric { font-size: 1.15rem; font-weight: 700; gap: 5px; }
+.map-toppanel__star { font-size: 1.3rem; }
+
+
+
+/* --- Подробности меры поддержки ----------------------------------------- */
+
+.benefit-detail {
+  gap: 0;
+  padding-top: calc(54px + var(--safe-top));
+  padding-bottom: var(--home-toolbar-space);
+}
+.benefit-detail__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.benefit-detail__tag {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 70%);
+  -webkit-backdrop-filter: saturate(160%) blur(12px);
+  backdrop-filter: saturate(160%) blur(12px);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 55%), 0 2px 8px -4px rgb(32 38 76 / 20%);
+  color: var(--ink-soft);
+  font-size: .8rem;
+  font-weight: 500;
+}
+.benefit-detail__title {
+  margin: 12px 0 0;
+  color: var(--ink);
+  font-size: clamp(20px, 5.6vw, 26px);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.benefit-detail__subtitle {
+  margin: 22px 0 0;
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.benefit-detail__list { margin: 12px 0 0; padding: 0; list-style: none; }
+.benefit-detail__list-item {
+  position: relative;
+  padding-left: 18px;
+  margin-top: 8px;
+  color: var(--ink);
+  font-size: .95rem;
+  font-weight: 400;
+  line-height: 1.45;
+}
+/* Маркер — точка в фирменном синем вместо стандартного буллита. */
+.benefit-detail__list-item::before {
+  content: '';
+  position: absolute;
+  top: .55em;
+  left: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--palette-blue);
+}
+.benefit-detail__actions { margin-top: 26px; }
+.benefit-detail__cta {
+  width: 100%;
+  height: 52px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--palette-blue);
+  color: #fff;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .2s cubic-bezier(.22, 1, .36, 1), background .2s ease;
+}
+.benefit-detail__cta:active { transform: scale(.985); }
+.benefit-detail__cta.is-applied { background: var(--ink-soft); }
+.benefit-detail__hint {
+  margin: 10px 0 0;
+  color: var(--ink-soft);
+  font-size: .875rem;
+  font-weight: 400;
+  text-align: center;
+}
+/* Дата подачи в списке заявок — между названием и кнопкой отзыва. */
+.requests-table__date { flex: 0 0 auto; color: var(--ink-soft); font-size: .85rem; white-space: nowrap; }
+
+/* --- История статусов заявки на меру поддержки -------------------------- */
+
+.benefit-status {
+  margin-top: 28px;
+  padding: 18px 16px 14px;
+  border-radius: 20px;
+  background: var(--g-card);
+  -webkit-backdrop-filter: var(--g-blur-soft);
+  backdrop-filter: var(--g-blur-soft);
+  box-shadow: var(--g-rim), var(--g-body), var(--g-drop-soft);
+}
+.benefit-status__title { margin: 0 0 14px; color: var(--ink); font-size: 1.05rem; font-weight: 700; }
+.benefit-status__list { margin: 0; padding: 0; list-style: none; }
+.benefit-status__step {
+  position: relative;
+  padding: 0 0 18px 26px;
+}
+/* Вертикальная линия между точками — у последнего шага не рисуется. */
+.benefit-status__step::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  bottom: 0;
+  left: 6px;
+  width: 2px;
+  background: var(--separator);
+}
+.benefit-status__step:last-child { padding-bottom: 0; }
+.benefit-status__step:last-child::before { display: none; }
+.benefit-status__dot {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--separator);
+  box-shadow: inset 0 0 0 3px #fff;
+}
+.benefit-status__step.is-done .benefit-status__dot { background: var(--palette-blue); }
+.benefit-status__step.is-done::before { background: var(--palette-blue); opacity: .35; }
+/* Текущий этап подсвечен кольцом — он «горит», пока идёт обработка. */
+.benefit-status__step.is-current .benefit-status__dot {
+  background: var(--orange);
+  box-shadow: inset 0 0 0 3px #fff, 0 0 0 4px rgb(255 149 0 / 22%);
+}
+.benefit-status__label { margin: 0; color: var(--ink); font-size: .95rem; font-weight: 600; line-height: 1.25; }
+.benefit-status__note { margin: 2px 0 0; color: var(--ink-soft); font-size: .85rem; font-weight: 400; line-height: 1.35; }
+.benefit-status__time { margin: 4px 0 0; color: var(--ink-soft); font-size: .8rem; font-weight: 500; }
+.benefit-status__step.is-current .benefit-status__time { color: var(--orange); }
+/* Будущие этапы приглушены — до них очередь ещё не дошла. */
+.benefit-status__step:not(.is-done):not(.is-current) .benefit-status__label,
+.benefit-status__step:not(.is-done):not(.is-current) .benefit-status__note {
+  opacity: .45;
+}
+
+/* Крестик закрытия прижат к краю панели на 10px, а у самой панели боковой
+   паддинг 16px — выносим кнопку на разницу, чтобы правые края совпали. */
+.map-toppanel__cta { margin-right: -6px; }
+
+/* --- Панель «Государственные субсидии» на главной ------------------------ */
+
+/* Плитка целиком занята фотографией, поэтому общий стеклянный фон под ней не
+   виден — стекло выносим на сам снимок: подпись ложится на матовую плашку,
+   по краям идёт светлая кромка, снизу — тёмная вуаль для читаемости. */
+.notice-tile--image {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 45%),
+    inset 0 0 0 1px rgb(255 255 255 / 22%),
+    0 20px 40px -18px rgb(32 38 76 / 38%);
+}
+.notice-tile--image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgb(10 14 40 / 22%) 0%,
+    rgb(10 14 40 / 0%) 38%,
+    rgb(10 14 40 / 0%) 62%,
+    rgb(10 14 40 / 26%) 100%
+  );
+}
+/* Подпись без плашки — только над вуалью, чтобы текст читался. Стекло
+   осталось на самой плитке. */
+.notice-tile--image .notice-tile__caption {
+  z-index: 2;
+  text-shadow: 0 2px 10px rgb(10 14 40 / 35%);
+}
+
+/* Компактная плитка уведомлений над ней — та же кромка, что у остальных
+   стеклянных карточек, чтобы пара читалась одинаково. */
+.notice-tile--compact {
+  box-shadow: var(--g-rim), var(--g-body), var(--g-drop-soft);
+}
+
+/* Текущий этап заявки — зелёный вместо оранжевого. Точка берёт брендовый
+   --palette-lime, подпись «в работе» — более тёмный --green: лайм на белом
+   фоне для мелкого текста слишком светлый. */
+.benefit-status__step.is-current .benefit-status__dot {
+  background: var(--palette-lime);
+  box-shadow: inset 0 0 0 3px #fff, 0 0 0 4px rgb(168 240 0 / 30%);
+}
+.benefit-status__step.is-current .benefit-status__time { color: var(--green); }
+
+/* --- Экран авторизации: светлая тема ------------------------------------ */
+
+/* Фон вместо сплошного синего — белый, как просили. Приветствие автовхода
+   (.welcome-screen) сохраняет свой светло-серый, поэтому его правило
+   объявлено ниже и перебивает это. */
+.mode-select-page::before { background: #fff; }
+
+/* Логотип — синий, остальной текст экрана — обычный тёмный. */
+.mode-select-brand { color: #2d78fd; }
+.mode-select-slogan { color: var(--ink); }
+.gosuslugi-verified { color: var(--ink); }
+
+/* Кнопки раньше были белыми на синем. На белом фоне они бы растворились,
+   поэтому инвертируем: синяя заливка, белая подпись. */
+.mode-select-page .account-switcher__trigger--text,
+.mode-select-page .account-switcher__menu,
+.mode-select-page .gosuslugi-cta {
+  background: #2d78fd;
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 28%),
+    inset 0 -1px 0 rgb(10 14 40 / 16%),
+    0 12px 26px -12px rgb(45 120 253 / 55%);
+}
+.mode-select-page .account-switcher__trigger--text:active,
+.mode-select-page .gosuslugi-cta:active {
+  background: #2467e0;
+}
+.mode-select-page .gosuslugi-cta__label { color: #fff; }
+/* Пункты выпадающего меню лежат на синей подложке. */
+.mode-select-page .account-switcher__item { color: #fff; }
+.mode-select-page .account-switcher__item.is-active { background: rgb(255 255 255 / 18%); }
+
+/* Приветствие автовхода остаётся на светло-сером — объявлено после смены
+   фона экрана входа, иначе его перебило бы правило выше. */
+.mode-select-page.welcome-screen::before { background: var(--sky); }
+
+/* Открытая кнопка и меню под ней — одна деталь: гасим нижнюю кромку у
+   кнопки и верхнюю тень у меню, иначе на стыке проходит светлая полоска. */
+.mode-select-page .account-switcher__trigger--text.is-open {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 28%);
+}
+.mode-select-page .account-switcher__menu {
+  box-shadow: 0 12px 26px -12px rgb(45 120 253 / 55%);
+}
+/* Меню осталось без аватаров — название теперь единственное содержимое
+   пункта, поэтому выравниваем его по левому краю без зазора под картинку. */
+.account-switcher__item { gap: 0; }
+
+/* Кнопка «сменить аккаунт» открывает меню — сжатие при нажатии здесь
+   неуместно: меню появляется вплотную под кнопкой, и она дёргается вместе
+   с ним. Остальные кнопки отклик на нажатие сохраняют. */
+.account-switcher__trigger--text {
+  transition: none;
+}
+.account-switcher__trigger--text:active {
+  transform: none;
+}
