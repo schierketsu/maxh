@@ -15,7 +15,9 @@ services:
     build:
       context: ./bot
     env_file:
-      - bot/.env
+      # Один файл на всё решение: его же читают Vite и сам бот при запуске
+      # без Docker. Заполняется скриптом setup-env (см. README).
+      - .env
     environment:
       NODE_ENV: production
       PORT: "3001"
