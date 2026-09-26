@@ -1,20 +1,28 @@
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+
+const TABS = [
+  { path: '/modes', label: 'главная' },
+  { path: '/map', label: 'карта' },
+  { path: '/profile', label: 'профиль' },
+]
 
 /** Постоянная нижняя панель навигации — на всех экранах, кроме входа через Госуслуги. */
 export function HomeToolbar() {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
 
   return (
     <div className="home-toolbar">
-      <button type="button" className="home-toolbar__btn" onClick={() => navigate('/modes')}>
-        главная
-      </button>
-      <button type="button" className="home-toolbar__btn" onClick={() => navigate('/map')}>
-        карта
-      </button>
-      <button type="button" className="home-toolbar__btn" onClick={() => navigate('/profile')}>
-        профиль
-      </button>
+      {TABS.map((tab) => (
+        <button
+          key={tab.path}
+          type="button"
+          className={`home-toolbar__btn${pathname === tab.path ? ' is-active' : ''}`}
+          onClick={() => navigate(tab.path)}
+        >
+          {tab.label}
+        </button>
+      ))}
     </div>
   )
 }

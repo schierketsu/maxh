@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { useCompany } from '../context/CompanyContext'
 import { fetchCompanyDetails } from '../lib/companyApi'
 import { fetchOpportunities, fetchRecommendations } from '../lib/b2bApi'
-import { brandCompanyName } from '../lib/demoBranding'
+import { brandCompanyName, demoKind, demoRating } from '../lib/demoBranding'
 import { getMaxUserId } from '../lib/maxBridge'
 import { loadYandexMaps, type YMapInstance } from '../lib/yandexMaps'
 import { addContactedRequest, getContactedRequests, removeContactedRequest } from '../lib/contactedRequests'
@@ -240,30 +240,61 @@ export function MapPage() {
       <div ref={mapRef} className="map-page__canvas" />
 
       {recommendations.length > 0 && recommendationsOpen && (
-        <div className="map-toppanel">
-          <button
-            type="button"
-            className="map-popup__close"
-            aria-label="Закрыть"
-            onClick={() => setRecommendationsOpen(false)}
-          >
-            ✕
-          </button>
-          <p className="map-toppanel__title">Рекомендуем для вас</p>
-          <div className="map-toppanel__item">
-            <span className="map-toppanel__item-name">
-              {brandCompanyName(recommendations[0].requesterInn, recommendations[0].requesterName)}
-            </span>
-            <span className="map-toppanel__item-need">{recommendations[0].item}</span>
-          </div>
-          <button
-            type="button"
-            className="map-toppanel__cta"
-            onClick={() => goToRecommendation(recommendations[0])}
-          >
-            перейти
-          </button>
-        </div>
+        (() => {
+          const top = recommendations[0]
+          const name = brandCompanyName(top.requesterInn, top.requesterName)
+          const rating = demoRating(top.requesterInn, name)
+          const kind = demoKind(top.requesterInn, name)
+
+          return (
+            <div className="map-toppanel">
+              <button
+                type="button"
+                className="map-popup__close"
+                aria-label="Закрыть"
+                onClick={() => setRecommendationsOpen(false)}
+              >
+                ✕
+              </button>
+
+              <div className="map-toppanel__row">
+                {/* Цвет фиксированный (тот же, что у кнопки "Перейти"), а не
+                    по названию компании — панель должна читаться как одна
+                    деталь. */}
+                <span className="map-toppanel__avatar" aria-hidden="true">
+                  {name.trim().charAt(0).toUpperCase()}
+                </span>
+
+                <div className="map-toppanel__body">
+                  <p className="map-toppanel__title">Рекомендуем для вас</p>
+                  <p className="map-toppanel__name">{name}</p>
+                  <p className="map-toppanel__sub">
+                    {[kind, top.item].filter(Boolean).join(' · ')}
+                  </p>
+
+                  <div className="map-toppanel__foot">
+                    <div className="map-toppanel__meta">
+                      {rating != null && (
+                        <span className="map-toppanel__metric">
+                          <span className="map-toppanel__star" aria-hidden="true">★</span>
+                          {rating.toFixed(1).replace('.', ',')}
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="map-toppanel__cta"
+                      onClick={() => goToRecommendation(top)}
+                    >
+                      Перейти
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        })()
       )}
 
       {selected && (

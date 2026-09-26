@@ -781,6 +781,25 @@ button, input, select, textarea { font: inherit; }
 .map-page__canvas [class*="-map-copyrights-promo"] {
   display: none !important;
 }
+
+/* ВРЕМЕННО, ТОЛЬКО ДЛЯ ЗАПИСИ ВИДЕОДЕМО — вернуть перед публикацией.
+   Логотип Яндекса и ссылки на условия использования обязательны по
+   лицензии Yandex Maps JS API: за их скрытие ключ могут отозвать. Убраны
+   потому, что плавающая нижняя панель перестала их перекрывать и они
+   торчали из-под неё. Чтобы вернуть — удалить блок целиком. */
+/* Широкие маски вместо точных имён: в v3 части копирайта живут в разных
+   элементах ("copyright" без s, отдельная ссылка на yandex.ru/maps), и
+   префикс версии в классе меняется от сборки к сборке. */
+.map-page__canvas [class*="copyright" i],
+.map-page__canvas [class*="logo" i],
+.map-page__canvas a[href*="yandex" i],
+/* Кнопка "Открыть в Яндекс.Картах" в левом нижнем углу — сидит в
+   ymaps3--controls_bottom ymaps3--controls_left; своих контролов мы на карту
+   не добавляем, так что нижний контейнер можно гасить целиком. */
+.map-page__canvas [class*="open-maps-button"],
+.map-page__canvas [class*="controls_bottom"] {
+  display: none !important;
+}
 .map-marker {
   width: 18px;
   height: 18px;
@@ -1334,3 +1353,536 @@ button, input, select, textarea { font: inherit; }
   .inn-row button { width: auto; }
   .b2b-direction-toggle { margin-bottom: -26px; }
 }
+
+/* ==========================================================================
+   Liquid glass — светлая тема
+   Палитра, шрифты и контрасты не меняются: переписан только материал.
+   Два правила, на которых всё держится:
+   1. Геометрия неприкосновенна. Кромки рисуются через inset box-shadow,
+      а не border — ширина и высота элементов остаются прежними до пикселя.
+   2. Стекло видно только на цветном. Под интерфейсом лежит подложка из
+      размытых пятен той же палитры — без неё прозрачность читается как
+      обычный белый.
+   Блок идёт последним в файле и переопределяет фоны выше, так что его можно
+   удалить целиком и вернуться к плоскому виду.
+   ========================================================================== */
+
+:root {
+  --g-float: rgb(255 255 255 / 55%);
+  --g-card: rgb(255 255 255 / 48%);
+  --g-field: rgb(255 255 255 / 42%);
+  --g-blur: saturate(190%) blur(30px);
+  --g-blur-soft: saturate(170%) blur(20px);
+
+  /* Кромка стекла: яркая сверху (свет падает сверху), холодная снизу-справа —
+     так край преломляет, а не просто обводит. Всё на inset, чтобы не
+     занимать ни одного пикселя габаритов. */
+  --g-rim:
+    inset 0 1px 0 rgb(255 255 255 / 95%),
+    inset 1px 0 0 rgb(255 255 255 / 60%),
+    inset -1px 0 0 rgb(111 43 254 / 10%),
+    inset 0 -1px 0 rgb(43 115 254 / 14%),
+    inset 0 0 0 1px rgb(255 255 255 / 35%);
+
+  /* Внутреннее свечение по нижней кромке — толщина материала. */
+  --g-body: inset 0 -24px 32px -28px rgb(255 255 255 / 90%);
+
+  --g-drop: 0 22px 44px -20px rgb(32 38 76 / 26%), 0 6px 14px -8px rgb(32 38 76 / 14%);
+  --g-drop-soft: 0 16px 32px -18px rgb(32 38 76 / 18%), 0 3px 8px -5px rgb(32 38 76 / 10%);
+
+  /* Панель стала плавающей капсулой — ей нужно больше места под собой. */
+  --home-toolbar-space: calc(78px + var(--safe-bottom));
+}
+
+/* Подложка. Пятна крупные и заметные: именно они дают переливы на кромках и
+   цветные тени под панелями. Цвета — ровно те же --palette-*. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -25%;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(44vw 44vw at 8% 4%, rgb(43 115 254 / 26%), transparent 58%),
+    radial-gradient(50vw 50vw at 96% 16%, rgb(111 43 254 / 22%), transparent 60%),
+    radial-gradient(46vw 46vw at 84% 92%, rgb(254 52 198 / 14%), transparent 58%),
+    radial-gradient(52vw 52vw at 4% 84%, rgb(43 115 254 / 16%), transparent 62%);
+}
+
+/* --- Плавающие слои ------------------------------------------------------ */
+
+.account-switcher__trigger--text,
+.account-switcher__menu,
+.company-details__close,
+.company-details__logout,
+.company-reviews-list__back,
+.map-toppanel,
+.map-popup,
+.b2b-back,
+.gosuslugi-cta {
+  background: var(--g-float);
+  -webkit-backdrop-filter: var(--g-blur);
+  backdrop-filter: var(--g-blur);
+  box-shadow: var(--g-rim), var(--g-body), var(--g-drop);
+}
+
+/* Кнопка и раскрытое меню под ней — одна деталь: гасим кромку на стыке,
+   иначе посередине проходит двойная светлая линия. */
+.account-switcher__trigger--text.is-open {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 95%),
+    inset 1px 0 0 rgb(255 255 255 / 60%),
+    inset -1px 0 0 rgb(111 43 254 / 10%),
+    0 -2px 20px -12px rgb(32 38 76 / 20%);
+}
+.account-switcher__menu {
+  box-shadow:
+    inset 1px 0 0 rgb(255 255 255 / 60%),
+    inset -1px 0 0 rgb(111 43 254 / 10%),
+    inset 0 -1px 0 rgb(43 115 254 / 14%),
+    var(--g-body),
+    var(--g-drop);
+}
+
+/* --- Нижняя панель как капсула ------------------------------------------ */
+
+/* Отрываем панель от края экрана — на референсах liquid glass это отдельная
+   плавающая деталь, под которой видно контент, а не приклеенная полоса. */
+.home-toolbar {
+  left: clamp(10px, 3vw, 16px);
+  right: clamp(10px, 3vw, 16px);
+  bottom: calc(10px + var(--safe-bottom));
+  padding: 7px 7px;
+  border-radius: 26px;
+  background: var(--g-float);
+  -webkit-backdrop-filter: var(--g-blur);
+  backdrop-filter: var(--g-blur);
+  box-shadow: var(--g-rim), var(--g-body), var(--g-drop);
+}
+.home-toolbar__btn {
+  padding: 11px 4px;
+  border-radius: 20px;
+  transition: background .2s ease, box-shadow .2s ease, color .2s ease;
+}
+.home-toolbar__btn:hover { background: rgb(255 255 255 / 45%); }
+/* Текущий раздел — своя стеклянная пилюля внутри панели. */
+.home-toolbar__btn.is-active {
+  background: rgb(255 255 255 / 78%);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 95%),
+    inset 0 -1px 0 rgb(43 115 254 / 12%),
+    0 4px 12px -4px rgb(32 38 76 / 18%);
+}
+.home-toolbar__btn:active { background: rgb(255 255 255 / 85%); }
+
+/* --- Карточки в потоке --------------------------------------------------- */
+
+.company-details__profile-card,
+.reviews-summary,
+.notice-tile,
+.program-card,
+.benefit-card,
+.benefits__more,
+.requests-table,
+.liked-companies__table,
+.dashboard__step {
+  background: var(--g-card);
+  -webkit-backdrop-filter: var(--g-blur-soft);
+  backdrop-filter: var(--g-blur-soft);
+  box-shadow: var(--g-rim), var(--g-body), var(--g-drop-soft);
+}
+
+/* --- Поля ввода ---------------------------------------------------------- */
+
+.b2b-textarea,
+.b2b-field__input {
+  background: var(--g-field);
+  -webkit-backdrop-filter: var(--g-blur-soft);
+  backdrop-filter: var(--g-blur-soft);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 85%),
+    inset 0 0 0 1px rgb(255 255 255 / 40%),
+    inset 0 2px 6px -3px rgb(32 38 76 / 14%);
+  transition: box-shadow .2s ease, background .2s ease;
+}
+.b2b-textarea:focus,
+.b2b-field__input:focus {
+  background: rgb(255 255 255 / 72%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 95%),
+    inset 0 0 0 1px rgb(43 115 254 / 40%),
+    0 0 0 4px rgb(43 115 254 / 12%);
+  outline: none;
+}
+
+.b2b-direction-toggle {
+  background: rgb(255 255 255 / 34%);
+  -webkit-backdrop-filter: var(--g-blur-soft);
+  backdrop-filter: var(--g-blur-soft);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 40%), inset 0 2px 6px -4px rgb(32 38 76 / 16%);
+}
+.b2b-direction-toggle__option.is-active {
+  background: rgb(255 255 255 / 88%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 95%),
+    0 3px 10px -4px rgb(32 38 76 / 20%);
+}
+
+/* --- Цветные плитки ------------------------------------------------------ */
+
+/* Заливка остаётся прежней — сверху ложится световая дуга и плотная нижняя
+   кромка, из-за которых плитка читается как литое цветное стекло. */
+.company-details__quick-tile,
+.company-details__notifications-cta {
+  background-image:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 34%) 0%,
+      rgb(255 255 255 / 10%) 30%,
+      rgb(255 255 255 / 0%) 55%,
+      rgb(10 14 40 / 10%) 100%
+    ),
+    radial-gradient(120% 60% at 50% -10%, rgb(255 255 255 / 30%), transparent 70%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 60%),
+    inset 0 -2px 0 rgb(10 14 40 / 14%),
+    inset 0 -30px 40px -34px rgb(255 255 255 / 60%),
+    0 18px 32px -16px rgb(32 38 76 / 34%);
+  transition: transform .22s cubic-bezier(.22, 1, .36, 1), box-shadow .22s ease;
+}
+.company-details__quick-tile:active,
+.company-details__notifications-cta:active {
+  transform: scale(.975);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 60%),
+    0 8px 18px -10px rgb(32 38 76 / 30%);
+}
+
+/* Аватар — стеклянная капля: блик сверху, уплотнение снизу, цветная тень. */
+.account-avatar,
+.company-details__avatar {
+  box-shadow:
+    inset 0 2px 2px rgb(255 255 255 / 55%),
+    inset 0 -6px 12px -6px rgb(10 14 40 / 28%),
+    0 10px 22px -10px rgb(32 38 76 / 40%);
+}
+
+/* --- Отклик на нажатие ---------------------------------------------------- */
+
+.company-details__close,
+.company-details__logout,
+.company-reviews-list__back,
+.b2b-back,
+.gosuslugi-cta,
+.account-switcher__trigger--text {
+  transition: transform .22s cubic-bezier(.22, 1, .36, 1), background .2s ease;
+}
+.company-details__close:active,
+.company-details__logout:active,
+.company-reviews-list__back:active,
+.b2b-back:active,
+.gosuslugi-cta:active,
+.account-switcher__trigger--text:active {
+  transform: scale(.965);
+  background: rgb(255 255 255 / 76%);
+}
+
+/* --- Запасной вариант ----------------------------------------------------- */
+
+/* Без backdrop-filter прозрачные поверхности превратились бы в мутные пятна
+   поверх текста — возвращаем плотный фон и убираем подложку. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .account-switcher__trigger--text,
+  .account-switcher__menu,
+  .company-details__close,
+  .company-details__logout,
+  .company-reviews-list__back,
+  .map-toppanel,
+  .map-popup,
+  .b2b-back,
+  .gosuslugi-cta,
+  .home-toolbar,
+  .company-details__profile-card,
+  .reviews-summary,
+  .notice-tile,
+  .program-card,
+  .benefit-card,
+  .benefits__more,
+  .requests-table,
+  .liked-companies__table,
+  .dashboard__step,
+  .b2b-textarea,
+  .b2b-field__input {
+    background: #fff;
+  }
+  body::before { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .company-details__close,
+  .company-details__logout,
+  .company-reviews-list__back,
+  .b2b-back,
+  .gosuslugi-cta,
+  .account-switcher__trigger--text,
+  .company-details__quick-tile,
+  .company-details__notifications-cta,
+  .home-toolbar__btn {
+    transition: none;
+  }
+  .company-details__close:active,
+  .company-details__logout:active,
+  .company-reviews-list__back:active,
+  .b2b-back:active,
+  .gosuslugi-cta:active,
+  .account-switcher__trigger--text:active,
+  .company-details__quick-tile:active,
+  .company-details__notifications-cta:active {
+    transform: none;
+  }
+}
+
+
+/* --- Liquid glass: страница господдержки -------------------------------- */
+
+/* Белые карточки мер поддержки расходятся на всю ширину экрана, поэтому
+   боковые кромки уходят за край и стекло на них почти не читалось —
+   усиливаем блик по верхней кромке и делаем тень заметнее. */
+.benefit-card {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 95%),
+    inset 0 -1px 0 rgb(43 115 254 / 14%),
+    var(--g-body),
+    0 18px 36px -20px rgb(32 38 76 / 24%);
+}
+
+/* Цветные карточки получают фон инлайн (style={{ background: color }}), а
+   инлайн бьёт таблицу стилей — отсюда !important. Сам цвет не трогаем:
+   поверх ложится только световая дуга. */
+.benefit-card--solid {
+  background-image:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 26%) 0%,
+      rgb(255 255 255 / 8%) 32%,
+      rgb(255 255 255 / 0%) 58%,
+      rgb(10 14 40 / 12%) 100%
+    ),
+    radial-gradient(130% 55% at 50% -8%, rgb(255 255 255 / 26%), transparent 72%) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 55%),
+    inset 0 -2px 0 rgb(10 14 40 / 16%),
+    0 18px 34px -18px rgb(32 38 76 / 34%);
+}
+
+/* Теги и кнопка внутри цветной карточки — полупрозрачные пилюли, которым
+   размытие даёт настоящую глубину вместо плоской заливки белым 22%. */
+.benefit-card--solid .benefit-card__tag,
+.benefit-card--solid .benefit-card__cta--icon {
+  -webkit-backdrop-filter: saturate(160%) blur(12px);
+  backdrop-filter: saturate(160%) blur(12px);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 45%),
+    0 2px 8px -3px rgb(10 14 40 / 24%);
+}
+
+/* Синяя кнопка действия: цвет прежний, добавлены блик и объёмная тень. */
+.benefit-card__cta {
+  background-image: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 24%) 0%,
+    rgb(255 255 255 / 4%) 45%,
+    rgb(10 14 40 / 8%) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 45%),
+    inset 0 -1px 0 rgb(10 14 40 / 14%),
+    0 8px 18px -8px rgb(43 115 254 / 45%);
+  transition: transform .2s cubic-bezier(.22, 1, .36, 1), box-shadow .2s ease;
+}
+.benefit-card__cta:active {
+  transform: scale(.98);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 45%), 0 4px 10px -6px rgb(43 115 254 / 40%);
+}
+
+/* Номер шага — стеклянная капля того же синего. */
+.dashboard__step-number {
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 30%), rgb(10 14 40 / 10%));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 55%),
+    0 4px 10px -4px rgb(43 115 254 / 50%);
+}
+
+/* --- Экран входа: стекло на сплошном синем ------------------------------ */
+
+/* Здесь за элементами не контент, а ровная синяя заливка
+   (.mode-select-page::before) — размывать нечего, а полупрозрачное белое на
+   синем читается как грязно-голубое. Поэтому на этом экране поверхности
+   остаются плотно-белыми, а «стеклянность» даётся только бликом, кромкой и
+   тенью. */
+.mode-select-page .account-switcher__trigger--text,
+.mode-select-page .account-switcher__menu,
+.mode-select-page .gosuslugi-cta {
+  background: #fff;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 90%),
+    inset 0 -1px 0 rgb(43 115 254 / 16%),
+    inset 0 -18px 24px -22px rgb(43 115 254 / 30%),
+    0 12px 28px -12px rgb(16 40 110 / 45%);
+}
+.mode-select-page .account-switcher__trigger--text.is-open {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 90%),
+    0 -2px 16px -10px rgb(16 40 110 / 40%);
+}
+.mode-select-page .account-switcher__menu {
+  box-shadow:
+    inset 0 -1px 0 rgb(43 115 254 / 16%),
+    0 12px 28px -12px rgb(16 40 110 / 45%);
+}
+.mode-select-page .account-switcher__trigger--text:active,
+.mode-select-page .gosuslugi-cta:active {
+  background: #fff;
+}
+
+/* Попап выбранной заявки прижимаем к нижней панели. --home-toolbar-space —
+   это резерв места в потоке, он заведомо больше реальной высоты капсулы,
+   поэтому отсчитываем не от него, а от верхней кромки самой панели:
+   10px отступ снизу + ~56px её высота. */
+:root { --home-toolbar-top: calc(66px + var(--safe-bottom)); }
+.map-popup {
+  bottom: calc(var(--home-toolbar-top) + 10px);
+}
+
+/* Крестик закрытия — и в панели чужой заявки, и в «Рекомендуем для вас» —
+   на белом фоне: серая заливка var(--sky) сливалась со стеклянной панелью. */
+.map-popup__close {
+  background: #fff;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 90%),
+    inset 0 0 0 1px rgb(28 28 30 / 6%),
+    0 2px 8px -3px rgb(32 38 76 / 22%);
+}
+.map-popup__close:active {
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgb(28 28 30 / 10%), 0 1px 4px -2px rgb(32 38 76 / 20%);
+}
+
+/* --- Панель рекомендации на карте --------------------------------------- */
+
+.map-toppanel { padding: 14px 16px; }
+.map-toppanel__row { display: flex; align-items: stretch; gap: 14px; }
+/* Кружок с первой буквой — как у аватаров в отзывах, только крупнее: фото
+   компании у нас нет, а пустой плейсхолдер выглядел бы дырой. */
+.map-toppanel__avatar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  color: #fff;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 45%),
+    inset 0 -3px 8px -3px rgb(10 14 40 / 25%),
+    0 6px 16px -8px rgb(32 38 76 / 40%);
+}
+.map-toppanel__body { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.map-toppanel__title {
+  margin: 0;
+  /* Было крупным заголовком панели — теперь надстрочная подпись над
+     названием компании, как на макете. */
+  color: var(--ink-soft);
+  font-size: .8rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+.map-toppanel__name {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.map-toppanel__sub {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: .85rem;
+  font-weight: 400;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.map-toppanel__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+}
+.map-toppanel__meta { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.map-toppanel__metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink);
+  font-size: .9rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.map-toppanel__star { color: var(--yellow); font-size: 1rem; line-height: 1; }
+
+/* Кнопка переехала из-под текста вправо, в одну строку с метриками. */
+.map-toppanel__cta {
+  flex: 0 0 auto;
+  gap: 6px;
+  height: 38px;
+  margin-top: 0;
+  padding: 0 16px;
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 26%), rgb(10 14 40 / 8%));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 50%),
+    inset 0 -1px 0 rgb(10 14 40 / 12%),
+    0 6px 14px -6px rgb(122 190 0 / 55%);
+  transition: transform .2s cubic-bezier(.22, 1, .36, 1);
+}
+.map-toppanel__cta:active { transform: scale(.97); }
+.map-toppanel__cta-arrow {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Аватар тянется на всю высоту карточки, а текст и нижняя строка с оценкой
+   и кнопкой идут строго в колонке справа от него — как на макете. */
+.map-toppanel__row { align-items: stretch; gap: 16px; }
+.map-toppanel__avatar {
+  align-self: stretch;
+  width: 104px;
+  height: auto;
+  min-height: 104px;
+  border-radius: 22px;
+  font-size: 44px;
+}
+.map-toppanel__body { justify-content: center; }
+.map-toppanel__foot { margin-top: 10px; }
+.map-toppanel__cta { padding: 0 20px; font-weight: 700; }
+
+/* Тот же лаймовый, что у кнопки «Перейти» (.map-toppanel__cta). */
+.map-toppanel__avatar { background: var(--palette-lime); }

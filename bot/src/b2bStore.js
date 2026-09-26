@@ -40,7 +40,7 @@ const DEMO_REQUESTS = [
     lon: 37.6176,
   },
   {
-    requesterName: 'Кейтеринг «Фуршет и Ко»',
+    requesterName: '«Фуршет и Ко»',
     direction: 'demand',
     item: 'кейтеринг-обслуживание на 50 человек',
     qty: '50 человек',
