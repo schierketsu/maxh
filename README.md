@@ -21,8 +21,9 @@
 [IO.File]::WriteAllText("$PWD\.env", (@("MAX_BOT_TOKEN=ВСТАВЬТЕ","DADATA_API_KEY=ВСТАВЬТЕ","CLOUDRU_API_KEY=ВСТАВЬТЕ","MINIAPP_URL=","MAX_API_BASE=https://platform-api.max.ru","BOT_POLLING=off","VITE_YANDEX_MAPS_API_KEY=ВСТАВЬТЕ","VITE_API_BASE_URL=","MINIAPP_PORT=8080") -join "`n") + "`n", (New-Object Text.UTF8Encoding $false))
 docker compose up --build
 
-ВНИМАНИЕ ВОЗЬМИТЕ ПОДПРАВЛЕННЫЙ СКРИПТ ИЗ ПРЕЗЕНТАЦИИ
 ```
+
+ВНИМАНИЕ ВОЗЬМИТЕ ПОДПРАВЛЕННЫЙ СКРИПТ ИЗ ПРЕЗЕНТАЦИИ
 
 **bash (Linux / macOS / Git Bash):**
 
