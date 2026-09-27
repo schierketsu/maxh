@@ -2120,3 +2120,32 @@ body::before {
 .account-switcher__trigger--text:active {
   transform: none;
 }
+
+/* --- Создание заявки: переключатель и поле — одна деталь ----------------- */
+
+/* Вкладки «мне нужно» / «я даю» наезжают на текстовое поле отрицательным
+   отступом, а углы на стыке срезаны — это должно читаться как единый блок.
+   Полупрозрачность и размытие проявляли границу между ними, поэтому здесь
+   стекло не применяем: плотные цвета, никаких кромок на стыке. */
+.b2b-direction-toggle {
+  background: var(--sky);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+.b2b-direction-toggle__option.is-active {
+  background: #fff;
+  box-shadow: none;
+}
+.b2b-textarea {
+  background: #fff;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+/* Фокус — только синее кольцо снаружи, без внутренних бликов: они бы снова
+   обвели поле по контуру, включая стык с вкладкой. */
+.b2b-textarea:focus {
+  background: #fff;
+  box-shadow: 0 0 0 3px rgb(43 115 254 / 25%);
+}
