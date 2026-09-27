@@ -1,11 +1,25 @@
 import { fetch as undiciFetch } from 'undici'
 
 const CLOUDRU_URL = 'https://foundation-models.api.cloud.ru/v1/chat/completions'
-// GigaChat (обоих размеров, через Cloud.ru) на этом эндпоинте отдаёт битый
-// JSON в аргументах function calling — проверено вживую на реальных заявках.
-// gpt-oss-120b (открытые веса, тоже хостится на Cloud.ru, не "Внешняя")
-// стабильно возвращает валидный JSON с корректным разбиением полей.
-const MODEL = 'openai/gpt-oss-120b'
+// Выбрано по замерам на реальных заявках (Cloud.ru, один и тот же промпт):
+//
+//   gpt-4.1-mini              0.9 с   все поля разобраны верно
+//   gemini-3.1-flash-lite     1.1 с   верно
+//   Qwen3-30B-A3B             2.2 с   битый JSON в аргументах
+//   DeepSeek-V4-Flash         5.7 с   верно
+//   gpt-oss-20b              21.1 с   верно
+//   gpt-oss-120b             48.4 с   верно  ← было здесь раньше
+//   GigaChat3-10B             0.4 с   потерял бюджет и срок
+//
+// gpt-oss — reasoning-модель: она расходует весь лимит max_tokens на
+// внутренние рассуждения (completion_tokens упирался в 512), отсюда десятки
+// секунд ожидания на простом извлечении полей. reasoning_effort шлюз
+// игнорирует, так что уменьшить это было нечем.
+const MODEL = 'openai/gpt-4.1-mini'
+
+// Заявку пользователь ждёт в чате: лучше честная ошибка через 20 секунд,
+// чем молчащий бот. При обычном ответе около секунды запас десятикратный.
+const REQUEST_TIMEOUT_MS = 20_000
 
 function loadApiKey() {
   const key = process.env.CLOUDRU_API_KEY
@@ -78,6 +92,7 @@ export async function extractRequest(text, direction = 'demand') {
       tools: [EXTRACT_TOOL],
       tool_choice: { type: 'function', function: { name: 'extract_request' } },
     }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   })
 
   if (!res.ok) {
